@@ -5,11 +5,11 @@ export default function Home() {
     <div className="min-h-screen p-8">
       <div className="max-w-2xl mx-auto">
         {/* Restaurant name */}
-        <h1 className="text-4xl font-bold mb-4">Gourmet Pot</h1>
+        <h1 className="text-4xl font-bold mb-4">Met pot</h1>
         
         {/* Short description */}
         <p className="text-lg mb-6">
-          Welcome to Gourmet Pot, where we serve delicious and authentic cuisine 
+          Welcome to Met pot, where we serve delicious and authentic cuisine 
           with fresh ingredients and traditional recipes.
         </p>
         

@@ -1,4 +1,4 @@
-# Gourmet Pot
+# Met pot
 
 A simple restaurant website built with Next.js, TypeScript, and Tailwind CSS.
 
@@ -22,4 +22,14 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 
 - **Homepage** (`/`): Restaurant information, opening hours, location, and a Menu button
 - **Menu** (`/menu`): List of menu items with prices
+
+## Next Steps
+
+- Add cart functionality
+- Implement checkout form
+- Connect email notifications for orders
+
+## Notes
+
+Current styling is basic. Future commits will improve layout and mobile responsiveness.
 
