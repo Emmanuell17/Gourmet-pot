@@ -1,8 +1,9 @@
 import type { Metadata } from 'next'
 import './globals.css'
+import Navbar from './components/Navbar'
 
 export const metadata: Metadata = {
-  title: 'Met pot',
+  title: 'Gourmet pot',
   description: 'A restaurant website',
 }
 
@@ -12,8 +13,11 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" className="scroll-smooth">
-      <body className="antialiased">{children}</body>
+    <html lang="en">
+      <body>
+        <Navbar />
+        {children}
+      </body>
     </html>
   )
 }

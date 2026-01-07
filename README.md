@@ -1,4 +1,4 @@
-# Met pot
+# Gourmet pot
 
 A simple restaurant website built with Next.js, TypeScript, and Tailwind CSS.
 
