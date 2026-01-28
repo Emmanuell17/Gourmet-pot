@@ -94,7 +94,7 @@ export default function Menu() {
               <div className="relative bg-white/10 backdrop-blur-sm rounded-2xl p-6 shadow-2xl border border-white/20 hover:bg-white/15 hover:scale-105 transition-all duration-300">
                 <div className="relative aspect-[3/4] rounded-xl overflow-hidden bg-gray-800/50">
                   <Image
-                    src="/menu2.jpg"
+                    src="/menu2.JPG"
                     alt="Rice Bowl Menu"
                     fill
                     className="object-cover rounded-xl group-hover:scale-110 transition-transform duration-500"
@@ -114,7 +114,7 @@ export default function Menu() {
               <div className="relative bg-white/10 backdrop-blur-sm rounded-2xl p-6 shadow-2xl border border-white/20 hover:bg-white/15 hover:scale-105 transition-all duration-300">
                 <div className="relative aspect-[3/4] rounded-xl overflow-hidden bg-gray-800/50">
                   <Image
-                    src="/menu1.jpg"
+                    src="/menu1.JPG"
                     alt="Soups & Stews and Sides Menu"
                     fill
                     className="object-cover rounded-xl group-hover:scale-110 transition-transform duration-500"
