@@ -23,6 +23,11 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Validate customer email (for confirmation email)
+    const customerEmail =
+      typeof customerInfo.email === 'string' ? customerInfo.email.trim() : ''
+    const isValidCustomerEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customerEmail)
+
     // Create email transporter
     // SMTP_USER: The email account used to authenticate and SEND emails (the "from" address)
     // SMTP_PASSWORD: The password/app password for the SMTP_USER account
@@ -62,7 +67,7 @@ export async function POST(request: NextRequest) {
     // from: The email address that sends the order (SMTP_USER)
     // to: The email address that receives orders (ORDER_EMAIL)
     // These can be the same email or different (e.g., send from noreply@restaurant.com to orders@restaurant.com)
-    const mailOptions = {
+    const chefMailOptions = {
       from: process.env.SMTP_USER, // Sender email (the account that sends)
       to: process.env.ORDER_EMAIL || process.env.SMTP_USER, // Recipient email (where orders are delivered)
       subject: `New Order from ${customerInfo.name} - Gourmet Pot`,
@@ -71,7 +76,7 @@ export async function POST(request: NextRequest) {
         <h3>Customer Information:</h3>
         <ul>
           <li><strong>Name:</strong> ${customerInfo.name}</li>
-          <li><strong>Email:</strong> ${customerInfo.email}</li>
+          <li><strong>Email:</strong> ${customerEmail}</li>
           <li><strong>Phone:</strong> ${customerInfo.phone}</li>
           ${customerInfo.address ? `<li><strong>Address:</strong> ${customerInfo.address}</li>` : ''}
           ${customerInfo.notes ? `<li><strong>Notes:</strong> ${customerInfo.notes}</li>` : ''}
@@ -89,7 +94,7 @@ export async function POST(request: NextRequest) {
         
         Customer Information:
         Name: ${customerInfo.name}
-        Email: ${customerInfo.email}
+        Email: ${customerEmail}
         Phone: ${customerInfo.phone}
         ${customerInfo.address ? `Address: ${customerInfo.address}` : ''}
         ${customerInfo.notes ? `Notes: ${customerInfo.notes}` : ''}
@@ -103,8 +108,50 @@ export async function POST(request: NextRequest) {
       `,
     }
 
-    // Send email
-    await transporter.sendMail(mailOptions)
+    const paymentLine =
+      'Payment: contact us for payment via Revolut, Bank transfer or Cash.'
+
+    const customerMailOptions = isValidCustomerEmail
+      ? {
+          from: process.env.SMTP_USER,
+          to: customerEmail,
+          subject: `Order confirmation - Gourmet Pot`,
+          html: `
+            <h2>Order sent successfully</h2>
+            <p>Hi ${customerInfo.name},</p>
+            <p>Thanks for your order. We received it and will review it shortly.</p>
+            <p><strong>${paymentLine}</strong></p>
+            <h3>Your order:</h3>
+            <pre style="background: #f5f5f5; padding: 15px; border-radius: 5px;">${orderItemsText}</pre>
+            <h3>Total: ${total.toLocaleString()} HUF</h3>
+            <p><strong>Order Date:</strong> ${new Date().toLocaleString()}</p>
+          `,
+          text: `
+            Order sent successfully
+            Hi ${customerInfo.name},
+            Thanks for your order. We received it and will review it shortly.
+            ${paymentLine}
+
+            Your order:
+            ${orderItemsText}
+
+            Total: ${total.toLocaleString()} HUF
+            Order Date: ${new Date().toLocaleString()}
+          `,
+        }
+      : null
+
+    // Send chef email (always)
+    await transporter.sendMail(chefMailOptions)
+
+    // Send customer confirmation email (best-effort)
+    if (customerMailOptions) {
+      try {
+        await transporter.sendMail(customerMailOptions)
+      } catch (customerEmailError) {
+        console.error('Error sending customer confirmation email:', customerEmailError)
+      }
+    }
 
     return NextResponse.json(
       { success: true, message: 'Order sent successfully!' },
