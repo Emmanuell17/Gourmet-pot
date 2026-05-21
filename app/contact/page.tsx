@@ -1,44 +1,102 @@
-import Image from 'next/image'
+import Link from 'next/link'
+import PageBackground from '../components/PageBackground'
+import PageHeader from '../components/PageHeader'
+import OrderBanner from '../components/OrderBanner'
+import { siteConfig, formatPhoneHref } from '@/lib/site'
+
+export const metadata = {
+  title: 'Contact',
+}
 
 export default function Contact() {
   return (
     <div className="min-h-screen relative">
-      {/* Interactive Background - same as menu/order pages */}
-      <div className="fixed inset-0 z-0">
-        <Image
-          src="/background.jpg"
-          alt="Background"
-          fill
-          className="object-cover"
-          priority
-        />
-        <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/60 to-black/70"></div>
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(255,165,0,0.1)_0%,transparent_50%)] animate-pulse"></div>
-        </div>
-      </div>
+      <PageBackground />
 
-      {/* Content */}
       <div className="relative z-10 p-8 md:p-16">
         <div className="max-w-2xl mx-auto">
-          <h1 className="text-4xl md:text-5xl font-extrabold mb-8 text-white tracking-wider">Contact</h1>
-          <p className="text-lg text-white/90 mb-6">Get in touch with us.</p>
-          <p className="text-lg text-white/90">
-            <span className="font-medium">Instagram:</span>{' '}
-            <a
-              href="https://instagram.com/gourmet_pot_"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-orange-400 hover:text-orange-300 underline"
+          <PageHeader title="Contact" subtitle="Get in touch with us" />
+
+          <div className="mb-8">
+            <OrderBanner />
+          </div>
+
+          <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-8 md:p-10 border border-white/20 space-y-6">
+            <section>
+              <h2 className="font-display text-xl font-semibold text-orange-400 mb-2">Instagram</h2>
+              <a
+                href={siteConfig.instagram.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-white text-lg hover:text-orange-300 transition-colors"
+              >
+                @{siteConfig.instagram.handle}
+              </a>
+              <p className="text-white/60 text-sm mt-2">
+                Message us for questions, pickup location details, or payment info.
+              </p>
+            </section>
+
+            {siteConfig.phone ? (
+              <section>
+                <h2 className="font-display text-xl font-semibold text-orange-400 mb-2">Phone</h2>
+                <a
+                  href={formatPhoneHref(siteConfig.phone)}
+                  className="text-white text-lg hover:text-orange-300 transition-colors"
+                >
+                  {siteConfig.phone}
+                </a>
+              </section>
+            ) : null}
+
+            {siteConfig.email ? (
+              <section>
+                <h2 className="font-display text-xl font-semibold text-orange-400 mb-2">Email</h2>
+                <a
+                  href={`mailto:${siteConfig.email}`}
+                  className="text-white text-lg hover:text-orange-300 transition-colors"
+                >
+                  {siteConfig.email}
+                </a>
+              </section>
+            ) : null}
+
+            <section>
+              <h2 className="font-display text-xl font-semibold text-orange-400 mb-2">Pickup</h2>
+              <p className="text-white/90 leading-relaxed">{siteConfig.pickup.cutoff}</p>
+              <p className="text-white/90 leading-relaxed mt-2">{siteConfig.pickup.summary}</p>
+              {siteConfig.pickup.address && (
+                <p className="text-white/70 mt-2">{siteConfig.pickup.address}</p>
+              )}
+              {siteConfig.pickup.mapsUrl ? (
+                <a
+                  href={siteConfig.pickup.mapsUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-block mt-3 text-orange-400 hover:text-orange-300 text-sm font-medium"
+                >
+                  Open in Google Maps →
+                </a>
+              ) : null}
+            </section>
+
+            <section>
+              <h2 className="font-display text-xl font-semibold text-orange-400 mb-2">Payment</h2>
+              <p className="text-white/90">{siteConfig.payment.note}</p>
+              <p className="text-white/70 text-sm mt-2">
+                Accepted: {siteConfig.payment.methods.join(' · ')}
+              </p>
+            </section>
+
+            <Link
+              href="/order"
+              className="block w-full text-center px-8 py-4 bg-orange-500 text-white rounded-lg font-semibold hover:bg-orange-600 transition-colors"
             >
-              @gourmet_pot_
-            </a>
-          </p>
+              Place an order
+            </Link>
+          </div>
         </div>
       </div>
     </div>
   )
 }
-
-
-

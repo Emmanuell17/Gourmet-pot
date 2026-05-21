@@ -1,39 +1,32 @@
 'use client'
 
 import Link from 'next/link'
-import Image from 'next/image'
 import { useEffect, useRef, useState } from 'react'
+import PageBackground from '../components/PageBackground'
+import PageHeader from '../components/PageHeader'
+import OrderBanner from '../components/OrderBanner'
+import { menuItems, formatItemLineTotal } from '@/data/menu'
+import {
+  calculateCartTotal,
+  getCartItemCount,
+  getOrderLineItems,
+} from '@/lib/menuOrder'
+import {
+  loadCart,
+  saveCart,
+  loadCustomerInfo,
+  saveCustomerInfo,
+  clearCartStorage,
+  type StoredCustomerInfo,
+} from '@/lib/cartStorage'
+import { getOrderWindowStatus } from '@/lib/orderWindow'
+import { siteConfig, formatPhoneHref } from '@/lib/site'
 
-interface MenuItem {
-  id: number
-  name: string
-  price: string
-}
-
-const menuItems: MenuItem[] = [
-  { id: 1, name: 'Jollof Rice with chicken', price: '3500 HUF' },
-  { id: 2, name: 'Jollof Rice with turkey', price: '4000 HUF' },
-  { id: 3, name: 'Fried Rice with chicken', price: '3500 HUF' },
-  { id: 4, name: 'Fried Rice with turkey', price: '4000 HUF' },
-  { id: 5, name: 'Chicken Shawarma', price: '2500 HUF' },
-  { id: 6, name: 'Egusi Soup 1.5L', price: '7000 HUF' },
-  { id: 7, name: 'Ogbono Soup 1.5L', price: '7000 HUF' },
-  { id: 8, name: 'Efo Riro 1.5L', price: '7700 HUF' },
-  { id: 9, name: 'Beef Suya (8 sticks)', price: '5500 HUF' },
-  { id: 10, name: 'Tomato Stew', price: 'Price varies by protein' },
-]
-
-interface CustomerInfo {
-  name: string
-  email: string
-  phone: string
-  address?: string
-  notes?: string
-}
+type CustomerInfo = StoredCustomerInfo
 
 export default function Order() {
   const [isLoaded, setIsLoaded] = useState(false)
-  const [quantities, setQuantities] = useState<{ [key: number]: number }>({})
+  const [quantities, setQuantities] = useState<Record<number, number>>({})
   const [customerInfo, setCustomerInfo] = useState<CustomerInfo>({
     name: '',
     email: '',
@@ -44,14 +37,32 @@ export default function Order() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle')
   const [submitMessage, setSubmitMessage] = useState('')
+  const [orderOpen, setOrderOpen] = useState(true)
+  const [hydrated, setHydrated] = useState(false)
   const successRef = useRef<HTMLDivElement>(null)
+  const formRef = useRef<HTMLFormElement>(null)
 
   useEffect(() => {
     setIsLoaded(true)
+    setQuantities(loadCart())
+    const saved = loadCustomerInfo()
+    if (saved) setCustomerInfo(saved)
+    setOrderOpen(getOrderWindowStatus().isOpen)
+    setHydrated(true)
   }, [])
 
   useEffect(() => {
-    if (submitStatus === 'success' && getItemCount() === 0 && successRef.current) {
+    if (!hydrated) return
+    saveCart(quantities)
+  }, [quantities, hydrated])
+
+  useEffect(() => {
+    if (!hydrated) return
+    saveCustomerInfo(customerInfo)
+  }, [customerInfo, hydrated])
+
+  useEffect(() => {
+    if (submitStatus === 'success' && getCartItemCount(quantities) === 0 && successRef.current) {
       successRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' })
     }
   }, [submitStatus, quantities])
@@ -68,40 +79,19 @@ export default function Order() {
     })
   }
 
-  const getTotal = () => {
-    return menuItems.reduce((total, item) => {
-      const quantity = quantities[item.id] || 0
-      if (item.price.includes('varies')) return total
-      const price = parseInt(item.price.replace(/[^0-9]/g, ''))
-      return total + price * quantity
-    }, 0)
-  }
-
-  const getItemCount = () => {
-    return Object.values(quantities).reduce((sum, qty) => sum + qty, 0)
-  }
-
-  const getOrderItems = () => {
-    return menuItems
-      .filter((item) => quantities[item.id] > 0)
-      .map((item) => {
-        const quantity = quantities[item.id]
-        const priceNum = item.price.includes('varies')
-          ? 0
-          : parseInt(item.price.replace(/[^0-9]/g, ''))
-        return {
-          name: item.name,
-          quantity,
-          price: item.price,
-          priceNum,
-        }
-      })
-  }
+  const itemCount = getCartItemCount(quantities)
+  const total = calculateCartTotal(quantities)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
-    if (getItemCount() === 0) {
+
+    if (!orderOpen) {
+      setSubmitStatus('error')
+      setSubmitMessage('Ordering is closed for this week. Check back Sunday or message us on Instagram.')
+      return
+    }
+
+    if (itemCount === 0) {
       setSubmitStatus('error')
       setSubmitMessage('Please select at least one item to order.')
       return
@@ -117,14 +107,11 @@ export default function Order() {
     setSubmitStatus('idle')
 
     try {
-      const orderItems = getOrderItems()
-      const total = getTotal()
+      const orderItems = getOrderLineItems(quantities)
 
       const response = await fetch('/api/send-order', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           customerInfo,
           orderItems,
@@ -136,9 +123,11 @@ export default function Order() {
 
       if (data.success) {
         setSubmitStatus('success')
-        setSubmitMessage('Order sent successfully, contact us for payment via Revolut, Bank transfer or Cash.')
-        // Reset form
+        setSubmitMessage(
+          `Order sent successfully. ${siteConfig.payment.note} (${siteConfig.payment.methods.join(', ')}).`
+        )
         setQuantities({})
+        clearCartStorage()
         setCustomerInfo({
           name: '',
           email: '',
@@ -148,67 +137,58 @@ export default function Order() {
         })
       } else {
         setSubmitStatus('error')
-        setSubmitMessage(data.message || 'Failed to send order. Please try again or call us.')
+        setSubmitMessage(data.message || 'Failed to send order. Please try again or contact us.')
       }
-    } catch (error) {
+    } catch {
       setSubmitStatus('error')
-      setSubmitMessage('Failed to send order. Please try again or call us.')
+      setSubmitMessage('Failed to send order. Please try again or contact us.')
     } finally {
       setIsSubmitting(false)
     }
   }
 
-  return (
-    <div className="min-h-screen relative">
-      {/* Interactive Background */}
-      <div className="fixed inset-0 z-0">
-        <Image
-          src="/background.jpg"
-          alt="Background pattern"
-          fill
-          className="object-cover"
-          priority
-        />
-        {/* Gradient overlay */}
-        <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/60 to-black/70"></div>
-        {/* Animated overlay pattern */}
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(255,165,0,0.1)_0%,transparent_50%)] animate-pulse"></div>
-        </div>
-      </div>
+  const scrollToForm = () => {
+    formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
 
-      {/* Content */}
+  return (
+    <div className="min-h-screen relative pb-28 md:pb-16">
+      <PageBackground />
+
       <div className="relative z-10 p-8 md:p-16">
         <div className="max-w-4xl mx-auto">
-          {/* Page title */}
-          <div 
-            className={`text-center mb-12 transition-all duration-1000 ease-out ${
-              isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
-            }`}
-          >
-            <h1 className="text-5xl md:text-6xl font-extrabold mb-4 text-white tracking-wider">
-              Order Now
-            </h1>
-            <p className="text-xl text-white/90">Select items from our menu</p>
+          <PageHeader title="Order Now" subtitle="Select items from our menu" isLoaded={isLoaded} />
+
+          <div className="mb-8">
+            <OrderBanner />
           </div>
 
-          {/* Order placed success - show at top after successful submit */}
-          {getItemCount() === 0 && submitStatus === 'success' && (
-            <div ref={successRef} className="bg-green-500/20 backdrop-blur-sm rounded-2xl p-8 md:p-12 shadow-2xl border-2 border-green-500/50 mb-8 text-center">
+          {itemCount === 0 && submitStatus === 'success' && (
+            <div
+              ref={successRef}
+              className="bg-green-500/20 backdrop-blur-sm rounded-2xl p-8 md:p-12 shadow-2xl border-2 border-green-500/50 mb-8 text-center"
+            >
               <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-green-500/30 text-green-400 mb-6 text-4xl">
                 ✓
               </div>
-              <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">Order placed</h2>
+              <h2 className="font-display text-3xl md:text-4xl font-bold text-white mb-4">
+                Order placed
+              </h2>
               <p className="text-white/95 text-lg mb-2">{submitMessage}</p>
               <p className="text-white/70 text-sm">
-                Orders are accepted until Thursday 6:00 PM. Pickup on Fridays.
+                {siteConfig.pickup.cutoff} {siteConfig.pickup.summary}
               </p>
             </div>
           )}
 
-          {/* Order List */}
           <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-8 md:p-12 shadow-2xl border border-white/20 mb-8">
-            <h2 className="text-3xl font-bold text-white mb-8 text-center">Menu Items</h2>
+            <h2 className="font-display text-3xl font-bold text-white mb-8 text-center">Menu Items</h2>
+            {!orderOpen && (
+              <p className="text-amber-200/90 text-center text-sm mb-6 px-4 py-3 rounded-lg bg-amber-500/10 border border-amber-500/30">
+                Ordering is currently closed. You can still browse the menu — check the banner above
+                for when we reopen.
+              </p>
+            )}
             <div className="space-y-4">
               {menuItems.map((item) => {
                 const quantity = quantities[item.id] || 0
@@ -218,27 +198,35 @@ export default function Order() {
                     className="bg-white/5 rounded-lg p-4 border border-white/10 hover:bg-white/10 transition-all duration-300"
                   >
                     <div className="flex items-center justify-between flex-wrap gap-4">
-                      <div className="flex-1">
+                      <div className="flex-1 min-w-[200px]">
                         <div className="flex items-center gap-3">
                           <span className="text-orange-500 font-bold text-lg">{item.id}.</span>
                           <h3 className="text-white font-semibold text-lg">{item.name}</h3>
                         </div>
                         <p className="text-white/70 ml-8 mt-1">{item.price}</p>
+                        {item.description && (
+                          <p className="text-white/50 ml-8 mt-1 text-sm">{item.description}</p>
+                        )}
                       </div>
                       <div className="flex items-center gap-3">
                         <button
+                          type="button"
                           onClick={() => updateQuantity(item.id, -1)}
                           className="w-10 h-10 rounded-lg bg-white/20 text-white font-bold hover:bg-white/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                           disabled={quantity === 0}
+                          aria-label={`Decrease ${item.name} quantity`}
                         >
                           −
                         </button>
-                        <span className="text-white font-bold text-lg w-8 text-center">
+                        <span className="text-white font-bold text-lg w-8 text-center" aria-live="polite">
                           {quantity}
                         </span>
                         <button
+                          type="button"
                           onClick={() => updateQuantity(item.id, 1)}
-                          className="w-10 h-10 rounded-lg bg-orange-500 text-white font-bold hover:bg-orange-600 transition-colors"
+                          className="w-10 h-10 rounded-lg bg-orange-500 text-white font-bold hover:bg-orange-600 transition-colors disabled:opacity-50"
+                          disabled={!orderOpen}
+                          aria-label={`Increase ${item.name} quantity`}
                         >
                           +
                         </button>
@@ -250,26 +238,20 @@ export default function Order() {
             </div>
           </div>
 
-          {/* Order Summary */}
-          {getItemCount() > 0 && (
+          {itemCount > 0 && (
             <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-8 shadow-2xl border border-white/20 mb-8">
               <h2 className="text-2xl font-bold text-white mb-6 text-center">Order Summary</h2>
               <div className="space-y-3 mb-6">
                 {menuItems.map((item) => {
                   const quantity = quantities[item.id] || 0
                   if (quantity === 0) return null
+                  const lineTotal = formatItemLineTotal(item, quantity)
                   return (
-                    <div key={item.id} className="flex justify-between text-white">
+                    <div key={item.id} className="flex justify-between text-white gap-4">
                       <span>
                         {item.name} × {quantity}
                       </span>
-                      {!item.price.includes('varies') && (
-                        <span>
-                          {(
-                            parseInt(item.price.replace(/[^0-9]/g, '')) * quantity
-                          ).toLocaleString()} HUF
-                        </span>
-                      )}
+                      {lineTotal && <span>{lineTotal}</span>}
                     </div>
                   )
                 })}
@@ -277,17 +259,20 @@ export default function Order() {
               <div className="border-t border-white/20 pt-4">
                 <div className="flex justify-between text-white text-xl font-bold">
                   <span>Total:</span>
-                  <span>{getTotal().toLocaleString()} HUF</span>
+                  <span>{total.toLocaleString()} HUF</span>
                 </div>
               </div>
             </div>
           )}
 
-          {/* Customer Information Form */}
-          {getItemCount() > 0 && (
-            <form onSubmit={handleSubmit} className="bg-white/10 backdrop-blur-sm rounded-2xl p-8 shadow-2xl border border-white/20 mb-8">
+          {itemCount > 0 && (
+            <form
+              ref={formRef}
+              onSubmit={handleSubmit}
+              className="bg-white/10 backdrop-blur-sm rounded-2xl p-8 shadow-2xl border border-white/20 mb-8"
+            >
               <h2 className="text-2xl font-bold text-white mb-6 text-center">Customer Information</h2>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                 <div>
                   <label htmlFor="name" className="block text-white mb-2 font-medium">
@@ -344,7 +329,7 @@ export default function Order() {
                     value={customerInfo.address}
                     onChange={(e) => setCustomerInfo({ ...customerInfo, address: e.target.value })}
                     className="w-full px-4 py-3 rounded-lg bg-white/10 border border-white/20 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-orange-500"
-                    placeholder="Delivery address"
+                    placeholder="Pickup reference or delivery address"
                   />
                 </div>
               </div>
@@ -359,11 +344,10 @@ export default function Order() {
                   onChange={(e) => setCustomerInfo({ ...customerInfo, notes: e.target.value })}
                   rows={3}
                   className="w-full px-4 py-3 rounded-lg bg-white/10 border border-white/20 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-orange-500 resize-none"
-                  placeholder="Any special requests or dietary requirements..."
+                  placeholder="Protein choice for Tomato Stew, allergies, etc."
                 />
               </div>
 
-              {/* Submit Status Message */}
               {submitStatus !== 'idle' && (
                 <div
                   className={`mb-6 p-4 rounded-lg ${
@@ -371,43 +355,56 @@ export default function Order() {
                       ? 'bg-green-500/20 border border-green-500/50 text-green-100'
                       : 'bg-red-500/20 border border-red-500/50 text-red-100'
                   }`}
+                  role="alert"
                 >
                   {submitMessage}
                 </div>
               )}
 
-              {/* Submit Button */}
               <button
                 type="submit"
-                disabled={isSubmitting}
-                className="w-full px-8 py-4 bg-orange-500 text-white rounded-lg font-semibold text-lg hover:bg-orange-600 hover:scale-105 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                disabled={isSubmitting || !orderOpen}
+                className="w-full px-8 py-4 bg-orange-500 text-white rounded-lg font-semibold text-lg hover:bg-orange-600 hover:scale-[1.02] transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
               >
-                {isSubmitting ? 'Sending Order...' : 'Submit Order'}
+                {isSubmitting ? 'Sending Order...' : orderOpen ? 'Submit Order' : 'Ordering Closed'}
               </button>
 
               <p className="text-white/70 text-center mt-4 text-sm">
-                Orders are accepted throughout the week until Thursday at 6:00 PM.<br />
-                All orders are available for pickup on Fridays.
+                {siteConfig.pickup.cutoff}
+                <br />
+                {siteConfig.pickup.summary}
               </p>
             </form>
           )}
 
-          {/* Order Instructions - Show when no items selected and no recent success */}
-          {getItemCount() === 0 && submitStatus !== 'success' && (
+          {itemCount === 0 && submitStatus !== 'success' && (
             <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-8 shadow-2xl border border-white/20 mb-8">
               <h2 className="text-2xl font-bold text-white mb-4 text-center">Order Information</h2>
               <p className="text-white/90 text-center mb-6 leading-relaxed">
-                Select items from the menu above to place an order.<br />
-                Orders are accepted throughout the week until Thursday at 6:00 PM.<br />
-                All orders are available for pickup on Fridays.
+                Select items from the menu above to place an order.
+                <br />
+                {siteConfig.pickup.cutoff}
+                <br />
+                {siteConfig.pickup.summary}
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <a
-                  href="tel:+1234567890"
-                  className="px-8 py-3 bg-orange-500 text-white rounded-lg font-semibold text-center hover:bg-orange-600 hover:scale-105 transition-all duration-300"
-                >
-                  Call to Order
-                </a>
+                {siteConfig.phone ? (
+                  <a
+                    href={formatPhoneHref(siteConfig.phone)}
+                    className="px-8 py-3 bg-orange-500 text-white rounded-lg font-semibold text-center hover:bg-orange-600 hover:scale-105 transition-all duration-300"
+                  >
+                    Call to Order
+                  </a>
+                ) : (
+                  <a
+                    href={siteConfig.instagram.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-8 py-3 bg-orange-500 text-white rounded-lg font-semibold text-center hover:bg-orange-600 hover:scale-105 transition-all duration-300"
+                  >
+                    Order via Instagram
+                  </a>
+                )}
                 <Link
                   href="/contact"
                   className="px-8 py-3 bg-white/20 backdrop-blur-sm text-white rounded-lg font-semibold text-center hover:bg-white/30 hover:scale-105 transition-all duration-300 border border-white/30"
@@ -418,9 +415,8 @@ export default function Order() {
             </div>
           )}
 
-          {/* Back to home link */}
           <div className="text-center">
-            <Link 
+            <Link
               href="/"
               className="inline-block px-8 py-3 bg-white/20 backdrop-blur-sm text-white rounded-lg font-semibold hover:bg-white/30 hover:scale-105 transition-all duration-300 border border-white/30"
             >
@@ -429,9 +425,22 @@ export default function Order() {
           </div>
         </div>
       </div>
+
+      {itemCount > 0 && (
+        <div className="fixed bottom-0 left-0 right-0 z-40 md:hidden bg-black/95 border-t border-white/10 px-4 py-3 flex items-center justify-between gap-4 safe-area-pb">
+          <div>
+            <p className="text-white/70 text-xs">{itemCount} item{itemCount !== 1 ? 's' : ''}</p>
+            <p className="text-white font-bold">{total.toLocaleString()} HUF</p>
+          </div>
+          <button
+            type="button"
+            onClick={scrollToForm}
+            className="px-6 py-3 bg-orange-500 text-white rounded-lg font-semibold shrink-0"
+          >
+            Checkout
+          </button>
+        </div>
+      )}
     </div>
   )
 }
-
-
-

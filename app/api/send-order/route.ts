@@ -56,9 +56,10 @@ export async function POST(request: NextRequest) {
     // Format order items
     const orderItemsText = orderItems
       .map((item: any) => {
-        const price = item.price.includes('varies')
-          ? 'Price varies'
-          : `${(item.priceNum * item.quantity).toLocaleString()} HUF`
+        const price =
+          item.priceNum === 0 || String(item.price).toLowerCase().includes('varies')
+            ? 'Price varies'
+            : `${(item.priceNum * item.quantity).toLocaleString()} HUF`
         return `${item.name} × ${item.quantity} - ${price}`
       })
       .join('\n')
