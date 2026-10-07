@@ -40,7 +40,8 @@ export default function Order() {
   const [orderOpen, setOrderOpen] = useState(true)
   const [hydrated, setHydrated] = useState(false)
   const successRef = useRef<HTMLDivElement>(null)
-  const formRef = useRef<HTMLFormElement>(null)
+  const menuRef = useRef<HTMLDivElement>(null)
+  const summaryRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     setIsLoaded(true)
@@ -77,6 +78,18 @@ export default function Order() {
       }
       return { ...prev, [id]: newQuantity }
     })
+  }
+
+  const removeItem = (id: number) => {
+    setQuantities((prev) => {
+      if (!prev[id]) return prev
+      const { [id]: _, ...rest } = prev
+      return rest
+    })
+  }
+
+  const clearCart = () => {
+    setQuantities({})
   }
 
   const itemCount = getCartItemCount(quantities)
@@ -147,8 +160,18 @@ export default function Order() {
     }
   }
 
-  const scrollToForm = () => {
-    formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  const scrollToSection = (element: HTMLElement | null) => {
+    if (!element) return
+    const top = element.getBoundingClientRect().top + window.scrollY - 88
+    window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' })
+  }
+
+  const scrollToMenu = () => {
+    scrollToSection(menuRef.current)
+  }
+
+  const scrollToSummary = () => {
+    scrollToSection(summaryRef.current)
   }
 
   return (
@@ -181,7 +204,10 @@ export default function Order() {
             </div>
           )}
 
-          <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-8 md:p-12 shadow-2xl border border-white/20 mb-8">
+          <div
+            ref={menuRef}
+            className="bg-white/10 backdrop-blur-sm rounded-2xl p-8 md:p-12 shadow-2xl border border-white/20 mb-8"
+          >
             <h2 className="font-display text-3xl font-bold text-white mb-8 text-center">Menu Items</h2>
             {!orderOpen && (
               <p className="text-amber-200/90 text-center text-sm mb-6 px-4 py-3 rounded-lg bg-amber-500/10 border border-amber-500/30">
@@ -239,25 +265,87 @@ export default function Order() {
           </div>
 
           {itemCount > 0 && (
-            <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-8 shadow-2xl border border-white/20 mb-8">
-              <h2 className="text-2xl font-bold text-white mb-6 text-center">Order Summary</h2>
-              <div className="space-y-3 mb-6">
+            <div
+              ref={summaryRef}
+              className="bg-white/10 backdrop-blur-sm rounded-2xl p-8 shadow-2xl border border-white/20 mb-8"
+            >
+              <div className="flex items-center justify-between gap-4 mb-2">
+                <h2 className="text-2xl font-bold text-white">Your order</h2>
+                <button
+                  type="button"
+                  onClick={clearCart}
+                  className="text-sm text-white/70 hover:text-white underline-offset-2 hover:underline"
+                >
+                  Clear cart
+                </button>
+              </div>
+              <p className="text-white/60 text-sm mb-6">
+                Change quantities or remove items before you submit.
+              </p>
+              <div className="space-y-4 mb-6">
                 {menuItems.map((item) => {
                   const quantity = quantities[item.id] || 0
                   if (quantity === 0) return null
                   const lineTotal = formatItemLineTotal(item, quantity)
                   return (
-                    <div key={item.id} className="flex justify-between text-white gap-4">
-                      <span>
-                        {item.name} × {quantity}
-                      </span>
-                      {lineTotal && <span>{lineTotal}</span>}
+                    <div
+                      key={item.id}
+                      className="pb-4 border-b border-white/10 last:border-0 last:pb-0"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="text-white font-medium">{item.name}</p>
+                          <p className="text-white/60 text-sm">{item.price}</p>
+                        </div>
+                        {lineTotal && (
+                          <p className="text-white font-medium whitespace-nowrap">{lineTotal}</p>
+                        )}
+                      </div>
+                      <div className="mt-3 flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => updateQuantity(item.id, -1)}
+                            className="w-9 h-9 rounded-lg bg-white/20 text-white font-bold hover:bg-white/30 transition-colors"
+                            aria-label={`Decrease ${item.name} quantity`}
+                          >
+                            −
+                          </button>
+                          <span className="text-white font-bold text-lg w-6 text-center" aria-live="polite">
+                            {quantity}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => updateQuantity(item.id, 1)}
+                            className="w-9 h-9 rounded-lg bg-orange-500 text-white font-bold hover:bg-orange-600 transition-colors disabled:opacity-50"
+                            disabled={!orderOpen}
+                            aria-label={`Increase ${item.name} quantity`}
+                          >
+                            +
+                          </button>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => removeItem(item.id)}
+                          className="text-sm text-white/70 hover:text-red-300 transition-colors"
+                          aria-label={`Remove ${item.name} from order`}
+                        >
+                          Remove
+                        </button>
+                      </div>
                     </div>
                   )
                 })}
               </div>
-              <div className="border-t border-white/20 pt-4">
-                <div className="flex justify-between text-white text-xl font-bold">
+              <div className="border-t border-white/20 pt-4 flex flex-wrap items-center justify-between gap-4">
+                <button
+                  type="button"
+                  onClick={scrollToMenu}
+                  className="text-sm font-medium text-orange-400 hover:text-orange-300 transition-colors"
+                >
+                  + Add more items
+                </button>
+                <div className="flex items-center gap-3 text-white text-xl font-bold ml-auto">
                   <span>Total:</span>
                   <span>{total.toLocaleString()} HUF</span>
                 </div>
@@ -267,7 +355,6 @@ export default function Order() {
 
           {itemCount > 0 && (
             <form
-              ref={formRef}
               onSubmit={handleSubmit}
               className="bg-white/10 backdrop-blur-sm rounded-2xl p-8 shadow-2xl border border-white/20 mb-8"
             >
@@ -434,10 +521,10 @@ export default function Order() {
           </div>
           <button
             type="button"
-            onClick={scrollToForm}
+            onClick={scrollToSummary}
             className="px-6 py-3 bg-orange-500 text-white rounded-lg font-semibold shrink-0"
           >
-            Checkout
+            Review order
           </button>
         </div>
       )}
