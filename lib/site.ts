@@ -2,7 +2,7 @@ export const siteConfig = {
   name: 'Gourmet pot',
   tagline: 'Where culinary artistry meets authentic tradition',
   description:
-    'Authentic Nigerian cuisine in Debrecen — weekly preorder for Friday pickup. Jollof, soups, suya, and more.',
+    'Authentic Nigerian cuisine in Debrecen — weekly preorder for Friday pickup. Jollof, soups, and more.',
   url: process.env.NEXT_PUBLIC_SITE_URL || 'https://gourmetpot.hu',
   instagram: {
     handle: 'gourmet_pot_',

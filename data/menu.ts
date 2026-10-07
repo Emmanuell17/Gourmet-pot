@@ -1,4 +1,4 @@
-export type MenuCategoryId = 'rice-bowls' | 'soups-stews' | 'grills' | 'other'
+export type MenuCategoryId = 'rice-bowls' | 'soups-stews' | 'grills'
 
 export interface MenuCategory {
   id: MenuCategoryId
@@ -19,17 +19,16 @@ export interface MenuItem {
 export const menuCategories: MenuCategory[] = [
   { id: 'rice-bowls', label: 'Rice Bowls', menuImageId: 'menu2' },
   { id: 'soups-stews', label: 'Soups & Stews', menuImageId: 'menu1' },
-  { id: 'grills', label: 'Grills', menuImageId: 'menu1' },
-  { id: 'other', label: 'Sides & More', menuImageId: 'menu1' },
+  { id: 'grills', label: 'Grills', menuImageId: 'menu2' },
 ]
 
 export const menuImages = {
   menu1: {
-    src: '/menu1.JPG',
-    alt: 'Soups, stews, and sides menu',
+    src: '/menu-soups-stews.jpg',
+    alt: 'Soups and stews menu',
   },
   menu2: {
-    src: '/menu2.JPG',
+    src: '/menu-rice-bowl.jpg',
     alt: 'Rice bowl menu',
   },
 } as const
@@ -92,18 +91,11 @@ export const menuItems: MenuItem[] = [
     category: 'soups-stews',
   },
   {
-    id: 9,
-    name: 'Beef Suya (8 sticks)',
-    price: '5500 HUF',
-    priceHuf: 5500,
-    category: 'grills',
-  },
-  {
     id: 10,
     name: 'Tomato Stew',
     price: 'Price varies by protein',
     priceHuf: null,
-    category: 'other',
+    category: 'soups-stews',
     description: 'Add your protein choice in special instructions.',
   },
 ]

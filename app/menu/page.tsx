@@ -64,12 +64,13 @@ export default function Menu() {
               }`}
             >
               <div className="relative bg-white/10 backdrop-blur-sm rounded-2xl p-6 shadow-2xl border border-white/20 hover:bg-white/15 hover:scale-[1.02] transition-all duration-300">
-                <div className="relative aspect-[3/4] rounded-xl overflow-hidden bg-gray-800/50">
+                <div className="relative aspect-[818/1024] rounded-xl overflow-hidden bg-[#f7f3ea]">
                   <Image
                     src={menuImages.menu2.src}
                     alt={menuImages.menu2.alt}
                     fill
-                    className="object-cover rounded-xl group-hover:scale-105 transition-transform duration-500"
+                    className="object-contain rounded-xl group-hover:scale-105 transition-transform duration-500"
+                    priority
                   />
                 </div>
                 <p className="text-white/80 text-center mt-4 text-sm">Rice bowls</p>
@@ -83,15 +84,15 @@ export default function Menu() {
               }`}
             >
               <div className="relative bg-white/10 backdrop-blur-sm rounded-2xl p-6 shadow-2xl border border-white/20 hover:bg-white/15 hover:scale-[1.02] transition-all duration-300">
-                <div className="relative aspect-[3/4] rounded-xl overflow-hidden bg-gray-800/50">
+                <div className="relative aspect-[818/1024] rounded-xl overflow-hidden bg-[#f7f3ea]">
                   <Image
                     src={menuImages.menu1.src}
                     alt={menuImages.menu1.alt}
                     fill
-                    className="object-cover rounded-xl group-hover:scale-105 transition-transform duration-500"
+                    className="object-contain rounded-xl group-hover:scale-105 transition-transform duration-500"
                   />
                 </div>
-                <p className="text-white/80 text-center mt-4 text-sm">Soups, stews & sides</p>
+                <p className="text-white/80 text-center mt-4 text-sm">Soups & stews</p>
               </div>
             </div>
           </div>

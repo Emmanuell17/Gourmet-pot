@@ -11,7 +11,7 @@ export function calculateCartTotal(quantities: CartQuantities): number {
 }
 
 export function getCartItemCount(quantities: CartQuantities): number {
-  return Object.values(quantities).reduce((sum, qty) => sum + qty, 0)
+  return menuItems.reduce((sum, item) => sum + (quantities[item.id] || 0), 0)
 }
 
 export function getOrderLineItems(quantities: CartQuantities) {
