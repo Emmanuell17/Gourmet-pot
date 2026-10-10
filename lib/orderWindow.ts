@@ -66,7 +66,7 @@ export function getOrderWindowStatus(): OrderWindowStatus {
     return {
       isOpen: true,
       title: 'Last day to order',
-      message: `Order before 6:00 PM today (Budapest time). ${siteConfig.pickup.summary}`,
+      message: `Order before 4:00PM today (Budapest time). ${siteConfig.pickup.summary}`,
     }
   }
 

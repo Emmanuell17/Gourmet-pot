@@ -12,8 +12,8 @@ export const siteConfig = {
   phone: '',
   email: '',
   pickup: {
-    summary: 'All orders are available for pickup on Fridays.',
-    cutoff: 'Orders are accepted throughout the week until Thursday at 6:00 PM.',
+    summary: 'Pickups only!',
+    cutoff: 'Orders close every Tuesday and Thursday at 4:00PM.',
     address: 'Debrecen, Hungary',
     mapsUrl: '',
   },
