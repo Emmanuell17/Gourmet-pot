@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import nodemailer from 'nodemailer'
 
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
@@ -23,10 +25,16 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Validate customer email (for confirmation email)
+    // Validate customer email. It is a required field, so reject the order
+    // up front instead of silently skipping the confirmation email.
     const customerEmail =
       typeof customerInfo.email === 'string' ? customerInfo.email.trim() : ''
-    const isValidCustomerEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customerEmail)
+    if (!customerEmail || customerEmail.length > 254 || !EMAIL_REGEX.test(customerEmail)) {
+      return NextResponse.json(
+        { success: false, message: 'Please enter a valid email address.' },
+        { status: 400 }
+      )
+    }
 
     // Create email transporter
     // SMTP_USER: The email account used to authenticate and SEND emails (the "from" address)
@@ -112,50 +120,49 @@ export async function POST(request: NextRequest) {
     const paymentLine =
       'Payment: contact us for payment via Revolut, Bank transfer or Cash.'
 
-    const customerMailOptions = isValidCustomerEmail
-      ? {
-          from: process.env.SMTP_USER,
-          to: customerEmail,
-          subject: `Order confirmation - Gourmet Pot`,
-          html: `
-            <h2>Order sent successfully</h2>
-            <p>Hi ${customerInfo.name},</p>
-            <p>Thanks for your order. We received it and will review it shortly.</p>
-            <p><strong>${paymentLine}</strong></p>
-            <h3>Your order:</h3>
-            <pre style="background: #f5f5f5; padding: 15px; border-radius: 5px;">${orderItemsText}</pre>
-            <h3>Total: ${total.toLocaleString()} HUF</h3>
-            <p><strong>Order Date:</strong> ${new Date().toLocaleString()}</p>
-          `,
-          text: `
-            Order sent successfully
-            Hi ${customerInfo.name},
-            Thanks for your order. We received it and will review it shortly.
-            ${paymentLine}
+    const customerMailOptions = {
+      from: process.env.SMTP_USER,
+      to: customerEmail,
+      subject: `Order confirmation - Gourmet Pot`,
+      html: `
+        <h2>Order sent successfully</h2>
+        <p>Hi ${customerInfo.name},</p>
+        <p>Thanks for your order. We received it and will review it shortly.</p>
+        <p><strong>${paymentLine}</strong></p>
+        <h3>Your order:</h3>
+        <pre style="background: #f5f5f5; padding: 15px; border-radius: 5px;">${orderItemsText}</pre>
+        <h3>Total: ${total.toLocaleString()} HUF</h3>
+        <p><strong>Order Date:</strong> ${new Date().toLocaleString()}</p>
+      `,
+      text: `
+        Order sent successfully
+        Hi ${customerInfo.name},
+        Thanks for your order. We received it and will review it shortly.
+        ${paymentLine}
 
-            Your order:
-            ${orderItemsText}
+        Your order:
+        ${orderItemsText}
 
-            Total: ${total.toLocaleString()} HUF
-            Order Date: ${new Date().toLocaleString()}
-          `,
-        }
-      : null
+        Total: ${total.toLocaleString()} HUF
+        Order Date: ${new Date().toLocaleString()}
+      `,
+    }
 
-    // Send chef email (always)
+    // Send chef email first. This is the order itself, so failure = failed order.
     await transporter.sendMail(chefMailOptions)
 
-    // Send customer confirmation email (best-effort)
-    if (customerMailOptions) {
-      try {
-        await transporter.sendMail(customerMailOptions)
-      } catch (customerEmailError) {
-        console.error('Error sending customer confirmation email:', customerEmailError)
-      }
+    // Send customer confirmation. The order is already placed at this point, so a
+    // failure here must not fail the request, but we report it to the client.
+    let confirmationEmailSent = true
+    try {
+      await transporter.sendMail(customerMailOptions)
+    } catch (customerEmailError) {
+      confirmationEmailSent = false
+      console.error('Error sending customer confirmation email:', customerEmailError)
     }
 
     return NextResponse.json(
-      { success: true, message: 'Order sent successfully!' },
+      { success: true, message: 'Order sent successfully!', confirmationEmailSent },
       { status: 200 }
     )
   } catch (error: any) {

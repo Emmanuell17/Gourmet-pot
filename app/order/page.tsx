@@ -34,6 +34,8 @@ export default function Order() {
     address: '',
     notes: '',
   })
+  // Not persisted; only used to catch typos in the email field
+  const [confirmEmail, setConfirmEmail] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle')
   const [submitMessage, setSubmitMessage] = useState('')
@@ -47,7 +49,11 @@ export default function Order() {
     setIsLoaded(true)
     setQuantities(loadCart())
     const saved = loadCustomerInfo()
-    if (saved) setCustomerInfo(saved)
+    if (saved) {
+      setCustomerInfo(saved)
+      // A previously saved email was already confirmed by the customer
+      setConfirmEmail(saved.email)
+    }
     setOrderOpen(getOrderWindowStatus().isOpen)
     setHydrated(true)
   }, [])
@@ -116,6 +122,12 @@ export default function Order() {
       return
     }
 
+    if (customerInfo.email.trim().toLowerCase() !== confirmEmail.trim().toLowerCase()) {
+      setSubmitStatus('error')
+      setSubmitMessage('The email addresses do not match. Please check them and try again.')
+      return
+    }
+
     setIsSubmitting(true)
     setSubmitStatus('idle')
 
@@ -137,10 +149,14 @@ export default function Order() {
       if (data.success) {
         setSubmitStatus('success')
         setSubmitMessage(
-          `Order sent successfully. ${siteConfig.payment.note} (${siteConfig.payment.methods.join(', ')}).`
+          `Order sent successfully. ${siteConfig.payment.note} (${siteConfig.payment.methods.join(', ')}).` +
+            (data.confirmationEmailSent === false
+              ? ' We could not send a confirmation email, but your order was received.'
+              : '')
         )
         setQuantities({})
         clearCartStorage()
+        setConfirmEmail('')
         setCustomerInfo({
           name: '',
           email: '',
@@ -388,6 +404,29 @@ export default function Order() {
                     className="w-full px-4 py-3 rounded-lg bg-white/10 border border-white/20 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-orange-500"
                     placeholder="your@email.com"
                   />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div className="md:col-start-2">
+                  <label htmlFor="confirmEmail" className="block text-white mb-2 font-medium">
+                    Confirm email <span className="text-orange-500">*</span>
+                  </label>
+                  <input
+                    type="email"
+                    id="confirmEmail"
+                    required
+                    autoComplete="off"
+                    value={confirmEmail}
+                    onChange={(e) => setConfirmEmail(e.target.value)}
+                    onPaste={(e) => e.preventDefault()}
+                    className="w-full px-4 py-3 rounded-lg bg-white/10 border border-white/20 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-orange-500"
+                    placeholder="Type your email again"
+                  />
+                  {confirmEmail &&
+                    customerInfo.email.trim().toLowerCase() !== confirmEmail.trim().toLowerCase() && (
+                      <p className="text-red-300 text-sm mt-1">Email addresses do not match.</p>
+                    )}
                 </div>
               </div>
 
