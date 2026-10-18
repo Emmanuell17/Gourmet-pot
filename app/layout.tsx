@@ -15,21 +15,33 @@ const playfair = Playfair_Display({
   variable: '--font-playfair',
 })
 
+// Used for link previews (Open Graph / Twitter) and structured data.
+// Lives in /public, so it is served from the site root.
+const SHARE_IMAGE_PATH = '/menu-rice-bowl.jpg'
+
 export const metadata: Metadata = {
+  // Resolves relative URLs (like the share image) to absolute ones
+  metadataBase: new URL(siteConfig.url),
   title: {
     default: siteConfig.name,
     template: `%s | ${siteConfig.name}`,
   },
   description: siteConfig.description,
-  icons: {
-    icon: [{ url: '/icon.svg', type: 'image/svg+xml' }],
-  },
+  // Favicons are picked up automatically from app/icon.svg and app/favicon.ico
   openGraph: {
     title: siteConfig.name,
     description: siteConfig.description,
+    url: '/',
     type: 'website',
-    locale: 'en_US',
+    locale: 'en_GB',
     siteName: siteConfig.name,
+    images: [{ url: SHARE_IMAGE_PATH, alt: `${siteConfig.name} — Nigerian cuisine in Debrecen` }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: siteConfig.name,
+    description: siteConfig.description,
+    images: [SHARE_IMAGE_PATH],
   },
 }
 
@@ -39,7 +51,12 @@ function RestaurantJsonLd() {
     '@type': 'Restaurant',
     name: siteConfig.name,
     description: siteConfig.description,
+    url: siteConfig.url,
+    image: `${siteConfig.url}${SHARE_IMAGE_PATH}`,
     servesCuisine: 'Nigerian',
+    // Only included when set in lib/site.ts
+    ...(siteConfig.phone ? { telephone: siteConfig.phone } : {}),
+    ...(siteConfig.email ? { email: siteConfig.email } : {}),
     address: {
       '@type': 'PostalAddress',
       addressLocality: 'Debrecen',
@@ -51,7 +68,8 @@ function RestaurantJsonLd() {
   return (
     <script
       type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+      // Escape "<" so the JSON can never close the script tag early
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(schema).replace(/</g, '\\u003c') }}
     />
   )
 }
