@@ -51,12 +51,6 @@ export default function Navbar() {
                 </Link>
               )
             })}
-            <Link
-              href="/order"
-              className="text-sm font-semibold px-4 py-2 bg-orange-500 rounded-lg hover:bg-orange-600 transition-colors"
-            >
-              Order Now
-            </Link>
           </div>
 
           {/* Mobile toggle */}
@@ -100,12 +94,6 @@ export default function Navbar() {
               </Link>
             )
           })}
-          <Link
-            href="/order"
-            className="block mt-2 text-center py-3 bg-orange-500 rounded-lg font-semibold hover:bg-orange-600 transition-colors"
-          >
-            Order Now
-          </Link>
         </div>
       )}
     </nav>
