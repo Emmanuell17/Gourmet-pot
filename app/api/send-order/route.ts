@@ -87,7 +87,6 @@ export async function POST(request: NextRequest) {
           <li><strong>Name:</strong> ${customerInfo.name}</li>
           <li><strong>Email:</strong> ${customerEmail}</li>
           <li><strong>Phone:</strong> ${customerInfo.phone}</li>
-          ${customerInfo.address ? `<li><strong>Address:</strong> ${customerInfo.address}</li>` : ''}
           ${customerInfo.notes ? `<li><strong>Notes:</strong> ${customerInfo.notes}</li>` : ''}
         </ul>
         
@@ -105,7 +104,6 @@ export async function POST(request: NextRequest) {
         Name: ${customerInfo.name}
         Email: ${customerEmail}
         Phone: ${customerInfo.phone}
-        ${customerInfo.address ? `Address: ${customerInfo.address}` : ''}
         ${customerInfo.notes ? `Notes: ${customerInfo.notes}` : ''}
         
         Order Items:

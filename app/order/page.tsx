@@ -31,7 +31,6 @@ export default function Order() {
     name: '',
     email: '',
     phone: '',
-    address: '',
     notes: '',
   })
   // Not persisted; only used to catch typos in the email field
@@ -161,7 +160,6 @@ export default function Order() {
           name: '',
           email: '',
           phone: '',
-          address: '',
           notes: '',
         })
       } else {
@@ -443,19 +441,6 @@ export default function Order() {
                     onChange={(e) => setCustomerInfo({ ...customerInfo, phone: e.target.value })}
                     className="w-full px-4 py-3 rounded-lg bg-white/10 border border-white/20 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-orange-500"
                     placeholder="+36 20 123 4567"
-                  />
-                </div>
-                <div>
-                  <label htmlFor="address" className="block text-white mb-2 font-medium">
-                    Address (Optional)
-                  </label>
-                  <input
-                    type="text"
-                    id="address"
-                    value={customerInfo.address}
-                    onChange={(e) => setCustomerInfo({ ...customerInfo, address: e.target.value })}
-                    className="w-full px-4 py-3 rounded-lg bg-white/10 border border-white/20 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-orange-500"
-                    placeholder="Pickup reference or delivery address"
                   />
                 </div>
               </div>

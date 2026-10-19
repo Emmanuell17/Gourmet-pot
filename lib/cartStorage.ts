@@ -7,7 +7,6 @@ export interface StoredCustomerInfo {
   name: string
   email: string
   phone: string
-  address?: string
   notes?: string
 }
 
