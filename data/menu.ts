@@ -63,6 +63,20 @@ export const menuItems: MenuItem[] = [
     category: 'rice-bowls',
   },
   {
+    id: 11,
+    name: 'Coconut Rice',
+    price: '3500 HUF',
+    priceHuf: 3500,
+    category: 'rice-bowls',
+  },
+  {
+    id: 12,
+    name: 'Native Rice',
+    price: '5000 HUF',
+    priceHuf: 5000,
+    category: 'rice-bowls',
+  },
+  {
     id: 5,
     name: 'Chicken Shawarma',
     price: '2500 HUF',
