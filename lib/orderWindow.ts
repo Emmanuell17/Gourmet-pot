@@ -6,6 +6,9 @@ export type OrderWindowStatus = {
   message: string
 }
 
+/** 4:00 PM Budapest — Tuesday cutoff for Wednesday pickup, Thursday cutoff for Friday pickup */
+const CUTOFF_HOUR = 16
+
 function getBudapestTime(): { day: number; hour: number } {
   const formatter = new Intl.DateTimeFormat('en-US', {
     timeZone: 'Europe/Budapest',
@@ -28,15 +31,22 @@ function getBudapestTime(): { day: number; hour: number } {
     Sat: 6,
   }
 
+  const hour = parseInt(parts.hour, 10)
   return {
     day: dayMap[parts.weekday] ?? 0,
-    hour: parseInt(parts.hour, 10),
+    hour: hour === 24 ? 0 : hour,
   }
 }
 
-/** Weekly preorder: open Sun–Thu until 18:00 Budapest; closed Thu evening through Sat */
+/**
+ * Two weekly preorder windows (Budapest time):
+ * - Sunday through Tuesday 4:00 PM → Wednesday pickup after 3:00 PM
+ * - Wednesday through Thursday 4:00 PM → Friday pickup after 3:00 PM
+ * Closed Tuesday after 4:00 PM, Thursday after 4:00 PM, Friday, and Saturday.
+ */
 export function getOrderWindowStatus(): OrderWindowStatus {
   const { day, hour } = getBudapestTime()
+  const afterCutoff = hour >= CUTOFF_HOUR
 
   if (day === 5) {
     return {
@@ -54,19 +64,35 @@ export function getOrderWindowStatus(): OrderWindowStatus {
     }
   }
 
-  if (day === 4 && hour >= 18) {
+  if (day === 2 && afterCutoff) {
     return {
       isOpen: false,
-      title: 'Ordering closed for this week',
-      message: `${siteConfig.pickup.cutoff} Pickup is on Friday.`,
+      title: 'Ordering closed',
+      message: `${siteConfig.pickup.cutoff} Ordering reopens Wednesday for Friday pickup.`,
+    }
+  }
+
+  if (day === 2) {
+    return {
+      isOpen: true,
+      title: 'Last day to order for Wednesday pickup',
+      message: `Order before 4:00 PM today (Budapest time). ${siteConfig.pickup.summary}`,
+    }
+  }
+
+  if (day === 4 && afterCutoff) {
+    return {
+      isOpen: false,
+      title: 'Ordering closed',
+      message: `${siteConfig.pickup.cutoff} ${siteConfig.pickup.summary} New orders open again on Sunday.`,
     }
   }
 
   if (day === 4) {
     return {
       isOpen: true,
-      title: 'Last day to order',
-      message: `Order before 4:00PM today (Budapest time). ${siteConfig.pickup.summary}`,
+      title: 'Last day to order for Friday pickup',
+      message: `Order before 4:00 PM today (Budapest time). ${siteConfig.pickup.summary}`,
     }
   }
 
