@@ -5,12 +5,7 @@ import Image from 'next/image'
 import { useEffect, useState, useRef } from 'react'
 import PageBackground from '../components/PageBackground'
 import PageHeader from '../components/PageHeader'
-import {
-  menuCategories,
-  menuImages,
-  menuItems,
-  type MenuCategoryId,
-} from '@/data/menu'
+import { menuImages } from '@/data/menu'
 
 export default function Menu() {
   const [isLoaded, setIsLoaded] = useState(false)
@@ -40,9 +35,6 @@ export default function Menu() {
 
     return () => observer.disconnect()
   }, [])
-
-  const itemsForCategory = (categoryId: MenuCategoryId) =>
-    menuItems.filter((item) => item.category === categoryId)
 
   return (
     <div className="min-h-screen relative">
@@ -97,43 +89,7 @@ export default function Menu() {
             </div>
           </div>
 
-          <div className="space-y-10">
-            {menuCategories.map((category) => {
-              const items = itemsForCategory(category.id)
-              if (items.length === 0) return null
-
-              return (
-                <section
-                  key={category.id}
-                  className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 md:p-8 border border-white/20"
-                >
-                  <h2 className="font-display text-2xl md:text-3xl font-bold text-white mb-6">
-                    {category.label}
-                  </h2>
-                  <ul className="space-y-3">
-                    {items.map((item) => (
-                      <li
-                        key={item.id}
-                        className="flex flex-wrap justify-between gap-2 py-3 border-b border-white/10 last:border-0"
-                      >
-                        <div>
-                          <span className="text-white font-medium">{item.name}</span>
-                          {item.description && (
-                            <p className="text-white/60 text-sm mt-0.5">{item.description}</p>
-                          )}
-                        </div>
-                        <span className="text-orange-400 font-semibold whitespace-nowrap">
-                          {item.price}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                </section>
-              )
-            })}
-          </div>
-
-          <div className="mt-12 text-center flex flex-col sm:flex-row gap-4 justify-center items-center">
+          <div className="text-center flex flex-col sm:flex-row gap-4 justify-center items-center">
             <Link
               href="/"
               className="inline-block px-8 py-3 bg-white/20 backdrop-blur-sm text-white rounded-lg font-semibold hover:bg-white/30 hover:scale-105 transition-all duration-300 border border-white/30"
