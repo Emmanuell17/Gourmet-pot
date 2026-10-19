@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import nodemailer from 'nodemailer'
+import { siteConfig } from '@/lib/site'
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
@@ -95,6 +96,7 @@ export async function POST(request: NextRequest) {
         
         <h3>Total: ${total.toLocaleString()} HUF</h3>
         
+        <p><strong>Pickup:</strong> ${siteConfig.pickup.summary}</p>
         <p><strong>Order Date:</strong> ${new Date().toLocaleString()}</p>
       `,
       text: `
@@ -111,6 +113,7 @@ export async function POST(request: NextRequest) {
         
         Total: ${total.toLocaleString()} HUF
         
+        Pickup: ${siteConfig.pickup.summary}
         Order Date: ${new Date().toLocaleString()}
       `,
     }
@@ -126,6 +129,7 @@ export async function POST(request: NextRequest) {
         <h2>Order sent successfully</h2>
         <p>Hi ${customerInfo.name},</p>
         <p>Thanks for your order. We received it and will review it shortly.</p>
+        <p><strong>Pickup:</strong> ${siteConfig.pickup.summary}</p>
         <p><strong>${paymentLine}</strong></p>
         <h3>Your order:</h3>
         <pre style="background: #f5f5f5; padding: 15px; border-radius: 5px;">${orderItemsText}</pre>
@@ -136,6 +140,7 @@ export async function POST(request: NextRequest) {
         Order sent successfully
         Hi ${customerInfo.name},
         Thanks for your order. We received it and will review it shortly.
+        Pickup: ${siteConfig.pickup.summary}
         ${paymentLine}
 
         Your order:
