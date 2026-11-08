@@ -9,7 +9,6 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { customerInfo, orderItems, total } = body
 
-    // Validate required environment variables
     if (!process.env.SMTP_USER || !process.env.SMTP_PASSWORD) {
       console.error('Missing SMTP credentials in environment variables')
       return NextResponse.json(
@@ -18,7 +17,6 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Validate request data
     if (!customerInfo || !orderItems || orderItems.length === 0) {
       return NextResponse.json(
         { success: false, message: 'Invalid order data provided.' },
@@ -26,8 +24,6 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Validate customer email. It is a required field, so reject the order
-    // up front instead of silently skipping the confirmation email.
     const customerEmail =
       typeof customerInfo.email === 'string' ? customerInfo.email.trim() : ''
     if (!customerEmail || customerEmail.length > 254 || !EMAIL_REGEX.test(customerEmail)) {
@@ -37,21 +33,16 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Create email transporter
-    // SMTP_USER: The email account used to authenticate and SEND emails (the "from" address)
-    // SMTP_PASSWORD: The password/app password for the SMTP_USER account
-    // For Gmail, you need to use an App Password (not your regular password)
     const transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST || 'smtp.gmail.com',
       port: parseInt(process.env.SMTP_PORT || '587'),
-      secure: false, // true for 465, false for other ports
+      secure: false,
       auth: {
-        user: process.env.SMTP_USER, // Email account that sends the order emails
-        pass: process.env.SMTP_PASSWORD, // Password for the sending account
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASSWORD,
       },
     })
 
-    // Verify transporter configuration
     try {
       await transporter.verify()
     } catch (verifyError) {
@@ -62,7 +53,6 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Format order items
     const orderItemsText = orderItems
       .map((item: any) => {
         const price =
@@ -73,13 +63,9 @@ export async function POST(request: NextRequest) {
       })
       .join('\n')
 
-    // Email content
-    // from: The email address that sends the order (SMTP_USER)
-    // to: The email address that receives orders (ORDER_EMAIL)
-    // These can be the same email or different (e.g., send from noreply@restaurant.com to orders@restaurant.com)
     const chefMailOptions = {
-      from: process.env.SMTP_USER, // Sender email (the account that sends)
-      to: process.env.ORDER_EMAIL || process.env.SMTP_USER, // Recipient email (where orders are delivered)
+      from: process.env.SMTP_USER,
+      to: process.env.ORDER_EMAIL || process.env.SMTP_USER,
       subject: `New Order from ${customerInfo.name} - Gourmet Pot`,
       html: `
         <h2>New Order Received</h2>
@@ -151,11 +137,8 @@ export async function POST(request: NextRequest) {
       `,
     }
 
-    // Send chef email first. This is the order itself, so failure = failed order.
     await transporter.sendMail(chefMailOptions)
 
-    // Send customer confirmation. The order is already placed at this point, so a
-    // failure here must not fail the request, but we report it to the client.
     let confirmationEmailSent = true
     try {
       await transporter.sendMail(customerMailOptions)
@@ -171,7 +154,6 @@ export async function POST(request: NextRequest) {
   } catch (error: any) {
     console.error('Error sending email:', error)
     
-    // Provide more specific error messages
     let errorMessage = 'Failed to send order. Please try again or call us.'
     if (error.code === 'EAUTH') {
       errorMessage = 'Email authentication failed. Please contact the restaurant directly.'
