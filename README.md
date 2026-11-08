@@ -1,95 +1,93 @@
-# Gourmet pot
+# Gourmet Pot
 
-A restaurant website built with Next.js, TypeScript, and Tailwind CSS with email ordering system.
+Preorder website for a Nigerian restaurant in Debrecen. Guests browse the menu, build a cart, and place a weekly pickup order. The kitchen receives the order by email, and the customer gets a confirmation.
 
-## Getting Started
+Production site: [gourmetpot.hu](https://gourmetpot.hu)
 
-First, install the dependencies:
+## What it shows
+
+This is a small production app, not a UI kit. The interesting work is the ordering rules and the email path.
+
+- **Two weekly preorder windows, in Budapest time.** Sunday through Tuesday 4:00 PM is for Wednesday pickup. Wednesday through Thursday 4:00 PM is for Friday pickup. The window is calculated with `Europe/Budapest`, so a server in another timezone does not open or close orders early.
+- **A cart that survives a refresh.** Quantities and customer details are stored in `localStorage`, including the private-mode case where storage throws.
+- **Orders that still count if the confirmation email fails.** The kitchen email is sent first. A failed customer confirmation is reported to the client and does not fail the order.
+- **Validation on the server.** The order route checks the payload and the customer email before SMTP is contacted. The form also asks the customer to type the email twice.
+- **One source for business copy.** Name, pickup rules, payment methods, and the public URL live in `lib/site.ts` and feed the pages, the emails, and the SEO metadata.
+- **Search and share metadata.** The root layout sets titles, Open Graph and Twitter cards, and Restaurant JSON-LD. The Apple touch icon is rasterized from the same SVG as the favicon.
+
+## Tech stack
+
+| Layer | Choice |
+| --- | --- |
+| Framework | Next.js 14, App Router, React 18 |
+| Language | TypeScript |
+| Styling | Tailwind CSS |
+| Fonts | DM Sans and Playfair Display via `next/font` |
+| Orders | Route Handler plus Nodemailer (SMTP) |
+| Data | Typed menu catalog in the repo. No database. |
+| Tooling | ESLint (`eslint-config-next`), PostCSS, Autoprefixer |
+
+## Routes
+
+| Path | Role |
+| --- | --- |
+| `/` | Hero, featured dishes, pickup information |
+| `/menu` | Menu photography |
+| `/order` | Cart, customer form, and order submit |
+| `/contact` | Instagram and pickup details |
+| `/api/send-order` | Validates the order and sends both emails |
+
+## Project layout
+
+```text
+app/                 pages, layout, and the order API
+app/components/      navbar, footer, order-window banner
+data/menu.ts         dishes, prices, and categories
+lib/site.ts          name, pickup rules, payment, public URL
+lib/orderWindow.ts   open and closed windows in Budapest time
+lib/cartStorage.ts   cart and customer details in localStorage
+public/              menu photos and the favicon
+```
+
+## Run it locally
 
 ```bash
 npm install
-```
-
-Then, run the development server:
-
-```bash
 npm run dev
 ```
 
-Open [http://localhost:3002](http://localhost:3002) with your browser to see the result.
+Open [http://localhost:3002](http://localhost:3002).
 
-## Pages
+| Script | What it does |
+| --- | --- |
+| `npm run dev` | Dev server on port 3002 |
+| `npm run build` | Production build |
+| `npm run start` | Serve the production build |
+| `npm run lint` | ESLint |
 
-- **Homepage** (`/`): Restaurant information, hero section, our story, and pickup information
-- **Menu** (`/menu`): Display of menu images
-- **Order** (`/order`): Interactive order page with email submission
-- **Contact** (`/contact`): Contact page
+## Email setup
 
-## Email Order System Setup
+Orders are not stored in a database. They are emailed. Copy the example env file and fill in real values:
 
-The website includes an email ordering system. To enable it:
-
-### Step 1: Create Environment File
-
-If you don't have a `.env.local` file, copy `.env.example` to `.env.local`:
 ```bash
 cp .env.example .env.local
 ```
 
-### Step 2: Configure Email Settings
+| Variable | Purpose |
+| --- | --- |
+| `SMTP_HOST` | SMTP server. Gmail is `smtp.gmail.com`. |
+| `SMTP_PORT` | `587` for TLS, `465` for SSL. |
+| `SMTP_USER` | Account that sends the mail. |
+| `SMTP_PASSWORD` | For Gmail, an App Password, not the normal account password. |
+| `ORDER_EMAIL` | Inbox that receives kitchen orders. Can match `SMTP_USER`. |
+| `NEXT_PUBLIC_SITE_URL` | Optional. Public site URL used for metadata. Defaults to `https://gourmetpot.hu`. |
 
-Fill in your email credentials in `.env.local`:
+Gmail will reject a normal password. Turn on 2-Step Verification, create an App Password at [myaccount.google.com/apppasswords](https://myaccount.google.com/apppasswords), and put the 16-character value in `SMTP_PASSWORD` with the spaces removed. Restart the dev server after changing `.env.local`.
 
-- `SMTP_HOST`: Your SMTP server (e.g., `smtp.gmail.com` for Gmail)
-- `SMTP_PORT`: SMTP port (usually `587` for TLS, `465` for SSL)
-- `SMTP_USER`: Your email address that will send the order emails
-- `SMTP_PASSWORD`: Your email password or App Password
-- `ORDER_EMAIL`: Email address where orders should be delivered (can be same as SMTP_USER)
+`.env.local` is gitignored.
 
-### Step 3: Gmail App Password Setup (Required for Gmail)
+If a test order fails:
 
-**Important:** Gmail requires an App Password, not your regular password.
-
-1. **Enable 2-Factor Authentication:**
-   - Go to [Google Account Security](https://myaccount.google.com/security)
-   - Enable 2-Step Verification if not already enabled
-
-2. **Generate App Password:**
-   - Go to [App Passwords](https://myaccount.google.com/apppasswords)
-   - Select "Mail" as the app and "Other" as the device
-   - Enter "Gourmet Pot Orders" as the custom name
-   - Click "Generate"
-   - Copy the 16-character password (it will look like: `abcd efgh ijkl mnop`)
-
-3. **Add to .env.local:**
-   - Remove spaces from the App Password
-   - Add it to `SMTP_PASSWORD` in your `.env.local` file
-
-### Step 4: Test the Setup
-
-1. Restart your development server:
-   ```bash
-   npm run dev
-   ```
-
-2. Navigate to the Order page (`/order`) and submit a test order
-
-3. Check the console for any errors and verify you receive the email at `ORDER_EMAIL`
-
-### Troubleshooting
-
-- **"EAUTH" error:** Your App Password is incorrect. Generate a new one.
-- **"ECONNECTION" error:** Check your internet connection and SMTP settings.
-- **No email received:** Check spam folder and verify `ORDER_EMAIL` is correct.
-- **Environment variables not loading:** Make sure the file is named `.env.local` (not `.env`) and restart the dev server.
-
-## Features
-
-- ✅ Responsive design with Tailwind CSS
-- ✅ Animated hero section
-- ✅ Interactive menu display
-- ✅ Email ordering system
-- ✅ Order summary and customer information form
-- ✅ Scroll animations
-- ✅ Modern glassmorphic UI design
-
+- **EAUTH** means the App Password is wrong. Generate a new one.
+- **ECONNECTION** means the app could not reach the SMTP server.
+- No mail in the inbox usually means the spam folder, or the wrong `ORDER_EMAIL`.
