@@ -485,6 +485,12 @@ export default function Order() {
                 <br />
                 {siteConfig.pickup.summary}
               </p>
+              <p className="text-white/60 text-center mt-3 text-sm">
+                Your name, email, and phone are used only to prepare this order.{' '}
+                <Link href="/privacy" className="text-orange-400 hover:text-orange-300 underline underline-offset-2">
+                  Privacy notice
+                </Link>
+              </p>
             </form>
           )}
 
