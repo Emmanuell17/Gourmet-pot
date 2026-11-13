@@ -38,6 +38,7 @@ export default function Order() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle')
   const [submitMessage, setSubmitMessage] = useState('')
+  const [orderCode, setOrderCode] = useState('')
   const [orderOpen, setOrderOpen] = useState(true)
   const [hydrated, setHydrated] = useState(false)
   const successRef = useRef<HTMLDivElement>(null)
@@ -129,6 +130,7 @@ export default function Order() {
 
     setIsSubmitting(true)
     setSubmitStatus('idle')
+    setOrderCode('')
 
     try {
       const orderItems = getOrderLineItems(quantities)
@@ -147,6 +149,7 @@ export default function Order() {
 
       if (data.success) {
         setSubmitStatus('success')
+        setOrderCode(typeof data.orderCode === 'string' ? data.orderCode : '')
         setSubmitMessage(
           `Order sent successfully. ${siteConfig.payment.note} (${siteConfig.payment.methods.join(', ')}).` +
             (data.confirmationEmailSent === false
@@ -211,6 +214,15 @@ export default function Order() {
               <h2 className="font-display text-3xl md:text-4xl font-bold text-white mb-4">
                 Order placed
               </h2>
+              {orderCode && (
+                <div className="mb-6">
+                  <p className="text-white/70 text-sm uppercase tracking-wider mb-2">Order code</p>
+                  <p className="font-display text-4xl md:text-5xl font-bold text-white tracking-widest">
+                    {orderCode}
+                  </p>
+                  <p className="text-white/80 mt-2">Show this code at pickup.</p>
+                </div>
+              )}
               <p className="text-white/95 text-lg mb-2">{submitMessage}</p>
               <p className="text-white/70 text-sm">
                 {siteConfig.pickup.cutoff} {siteConfig.pickup.summary}
