@@ -21,6 +21,8 @@ import {
 } from '@/lib/cartStorage'
 import { getOrderWindowStatus } from '@/lib/orderWindow'
 import { siteConfig, formatPhoneHref } from '@/lib/site'
+import { fill } from '@/lib/i18n'
+import { useI18n } from '../components/LocaleProvider'
 
 type CustomerInfo = StoredCustomerInfo
 
@@ -41,6 +43,7 @@ export default function Order() {
   const [orderCode, setOrderCode] = useState('')
   const [orderOpen, setOrderOpen] = useState(true)
   const [hydrated, setHydrated] = useState(false)
+  const { locale, messages } = useI18n()
   const successRef = useRef<HTMLDivElement>(null)
   const menuRef = useRef<HTMLDivElement>(null)
   const summaryRef = useRef<HTMLDivElement>(null)
@@ -106,25 +109,25 @@ export default function Order() {
 
     if (!orderOpen) {
       setSubmitStatus('error')
-      setSubmitMessage('Ordering is closed for this week. Check back Sunday or message us on Instagram.')
+      setSubmitMessage(messages.order.closedSubmit)
       return
     }
 
     if (itemCount === 0) {
       setSubmitStatus('error')
-      setSubmitMessage('Please select at least one item to order.')
+      setSubmitMessage(messages.order.emptyCart)
       return
     }
 
     if (!customerInfo.name || !customerInfo.email || !customerInfo.phone) {
       setSubmitStatus('error')
-      setSubmitMessage('Please fill in all required fields (Name, Email, Phone).')
+      setSubmitMessage(messages.order.missingFields)
       return
     }
 
     if (customerInfo.email.trim().toLowerCase() !== confirmEmail.trim().toLowerCase()) {
       setSubmitStatus('error')
-      setSubmitMessage('The email addresses do not match. Please check them and try again.')
+      setSubmitMessage(messages.order.emailMismatchSubmit)
       return
     }
 
@@ -142,6 +145,7 @@ export default function Order() {
           customerInfo,
           orderItems,
           total,
+          locale,
         }),
       })
 
@@ -151,10 +155,8 @@ export default function Order() {
         setSubmitStatus('success')
         setOrderCode(typeof data.orderCode === 'string' ? data.orderCode : '')
         setSubmitMessage(
-          `Order sent successfully. ${siteConfig.payment.note} (${siteConfig.payment.methods.join(', ')}).` +
-            (data.confirmationEmailSent === false
-              ? ' We could not send a confirmation email, but your order was received.'
-              : '')
+          messages.order.success +
+            (data.confirmationEmailSent === false ? messages.order.successNoEmail : '')
         )
         setQuantities({})
         clearCartStorage()
@@ -167,11 +169,11 @@ export default function Order() {
         })
       } else {
         setSubmitStatus('error')
-        setSubmitMessage(data.message || 'Failed to send order. Please try again or contact us.')
+        setSubmitMessage(data.message || messages.order.failed)
       }
     } catch {
       setSubmitStatus('error')
-      setSubmitMessage('Failed to send order. Please try again or contact us.')
+      setSubmitMessage(messages.order.failed)
     } finally {
       setIsSubmitting(false)
     }
@@ -197,7 +199,7 @@ export default function Order() {
 
       <div className="relative z-10 p-8 md:p-16">
         <div className="max-w-4xl mx-auto">
-          <PageHeader title="Order Now" subtitle="Select items from our menu" isLoaded={isLoaded} />
+          <PageHeader title={messages.order.title} subtitle={messages.order.subtitle} isLoaded={isLoaded} />
 
           <div className="mb-8">
             <OrderBanner />
@@ -212,20 +214,20 @@ export default function Order() {
                 ✓
               </div>
               <h2 className="font-display text-3xl md:text-4xl font-bold text-white mb-4">
-                Order placed
+                {messages.order.placed}
               </h2>
               {orderCode && (
                 <div className="mb-6">
-                  <p className="text-white/70 text-sm uppercase tracking-wider mb-2">Order code</p>
+                  <p className="text-white/70 text-sm uppercase tracking-wider mb-2">{messages.order.orderCode}</p>
                   <p className="font-display text-4xl md:text-5xl font-bold text-white tracking-widest">
                     {orderCode}
                   </p>
-                  <p className="text-white/80 mt-2">Show this code at pickup.</p>
+                  <p className="text-white/80 mt-2">{messages.order.showCode}</p>
                 </div>
               )}
               <p className="text-white/95 text-lg mb-2">{submitMessage}</p>
               <p className="text-white/70 text-sm">
-                {siteConfig.pickup.cutoff} {siteConfig.pickup.summary}
+                {messages.pickup.cutoff} {messages.pickup.summary}
               </p>
             </div>
           )}
@@ -234,11 +236,10 @@ export default function Order() {
             ref={menuRef}
             className="bg-white/10 backdrop-blur-sm rounded-2xl p-8 md:p-12 shadow-2xl border border-white/20 mb-8"
           >
-            <h2 className="font-display text-3xl font-bold text-white mb-8 text-center">Menu Items</h2>
+            <h2 className="font-display text-3xl font-bold text-white mb-8 text-center">{messages.order.menuItems}</h2>
             {!orderOpen && (
               <p className="text-amber-200/90 text-center text-sm mb-6 px-4 py-3 rounded-lg bg-amber-500/10 border border-amber-500/30">
-                Ordering is currently closed. You can still browse the menu — check the banner above
-                for when we reopen.
+                {messages.order.closedNote}
               </p>
             )}
             <div className="space-y-4">
@@ -257,7 +258,9 @@ export default function Order() {
                         </div>
                         <p className="text-white/70 ml-8 mt-1">{item.price}</p>
                         {item.description && (
-                          <p className="text-white/50 ml-8 mt-1 text-sm">{item.description}</p>
+                          <p className="text-white/50 ml-8 mt-1 text-sm">
+                            {item.id === 10 ? messages.order.proteinNote : item.description}
+                          </p>
                         )}
                       </div>
                       <div className="flex items-center gap-3">
@@ -266,7 +269,7 @@ export default function Order() {
                           onClick={() => updateQuantity(item.id, -1)}
                           className="w-10 h-10 rounded-lg bg-white/20 text-white font-bold hover:bg-white/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                           disabled={quantity === 0}
-                          aria-label={`Decrease ${item.name} quantity`}
+                          aria-label={fill(messages.order.decrease, { name: item.name })}
                         >
                           −
                         </button>
@@ -278,7 +281,7 @@ export default function Order() {
                           onClick={() => updateQuantity(item.id, 1)}
                           className="w-10 h-10 rounded-lg bg-orange-500 text-white font-bold hover:bg-orange-600 transition-colors disabled:opacity-50"
                           disabled={!orderOpen}
-                          aria-label={`Increase ${item.name} quantity`}
+                          aria-label={fill(messages.order.increase, { name: item.name })}
                         >
                           +
                         </button>
@@ -296,17 +299,17 @@ export default function Order() {
               className="bg-white/10 backdrop-blur-sm rounded-2xl p-8 shadow-2xl border border-white/20 mb-8"
             >
               <div className="flex items-center justify-between gap-4 mb-2">
-                <h2 className="text-2xl font-bold text-white">Your order</h2>
+                <h2 className="text-2xl font-bold text-white">{messages.order.yourOrder}</h2>
                 <button
                   type="button"
                   onClick={clearCart}
                   className="text-sm text-white/70 hover:text-white underline-offset-2 hover:underline"
                 >
-                  Clear cart
+                  {messages.order.clearCart}
                 </button>
               </div>
               <p className="text-white/60 text-sm mb-6">
-                Change quantities or remove items before you submit.
+                {messages.order.editHint}
               </p>
               <div className="space-y-4 mb-6">
                 {menuItems.map((item) => {
@@ -333,7 +336,7 @@ export default function Order() {
                             type="button"
                             onClick={() => updateQuantity(item.id, -1)}
                             className="w-9 h-9 rounded-lg bg-white/20 text-white font-bold hover:bg-white/30 transition-colors"
-                            aria-label={`Decrease ${item.name} quantity`}
+                            aria-label={fill(messages.order.decrease, { name: item.name })}
                           >
                             −
                           </button>
@@ -345,7 +348,7 @@ export default function Order() {
                             onClick={() => updateQuantity(item.id, 1)}
                             className="w-9 h-9 rounded-lg bg-orange-500 text-white font-bold hover:bg-orange-600 transition-colors disabled:opacity-50"
                             disabled={!orderOpen}
-                            aria-label={`Increase ${item.name} quantity`}
+                            aria-label={fill(messages.order.increase, { name: item.name })}
                           >
                             +
                           </button>
@@ -354,9 +357,9 @@ export default function Order() {
                           type="button"
                           onClick={() => removeItem(item.id)}
                           className="text-sm text-white/70 hover:text-red-300 transition-colors"
-                          aria-label={`Remove ${item.name} from order`}
+                          aria-label={fill(messages.order.removeNamed, { name: item.name })}
                         >
-                          Remove
+                          {messages.order.remove}
                         </button>
                       </div>
                     </div>
@@ -369,10 +372,10 @@ export default function Order() {
                   onClick={scrollToMenu}
                   className="text-sm font-medium text-orange-400 hover:text-orange-300 transition-colors"
                 >
-                  + Add more items
+                  {messages.order.addMore}
                 </button>
                 <div className="flex items-center gap-3 text-white text-xl font-bold ml-auto">
-                  <span>Total:</span>
+                  <span>{messages.order.total}:</span>
                   <span>{total.toLocaleString()} HUF</span>
                 </div>
               </div>
@@ -384,12 +387,12 @@ export default function Order() {
               onSubmit={handleSubmit}
               className="bg-white/10 backdrop-blur-sm rounded-2xl p-8 shadow-2xl border border-white/20 mb-8"
             >
-              <h2 className="text-2xl font-bold text-white mb-6 text-center">Customer Information</h2>
+              <h2 className="text-2xl font-bold text-white mb-6 text-center">{messages.order.customer}</h2>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                 <div>
                   <label htmlFor="name" className="block text-white mb-2 font-medium">
-                    Name <span className="text-orange-500">*</span>
+                    {messages.order.name} <span className="text-orange-500">*</span>
                   </label>
                   <input
                     type="text"
@@ -398,12 +401,12 @@ export default function Order() {
                     value={customerInfo.name}
                     onChange={(e) => setCustomerInfo({ ...customerInfo, name: e.target.value })}
                     className="w-full px-4 py-3 rounded-lg bg-white/10 border border-white/20 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-orange-500"
-                    placeholder="Your name"
+                    placeholder={messages.order.namePlaceholder}
                   />
                 </div>
                 <div>
                   <label htmlFor="email" className="block text-white mb-2 font-medium">
-                    Email <span className="text-orange-500">*</span>
+                    {messages.order.email} <span className="text-orange-500">*</span>
                   </label>
                   <input
                     type="email"
@@ -412,7 +415,7 @@ export default function Order() {
                     value={customerInfo.email}
                     onChange={(e) => setCustomerInfo({ ...customerInfo, email: e.target.value })}
                     className="w-full px-4 py-3 rounded-lg bg-white/10 border border-white/20 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-orange-500"
-                    placeholder="your@email.com"
+                    placeholder={messages.order.emailPlaceholder}
                   />
                 </div>
               </div>
@@ -420,7 +423,7 @@ export default function Order() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                 <div className="md:col-start-2">
                   <label htmlFor="confirmEmail" className="block text-white mb-2 font-medium">
-                    Confirm email <span className="text-orange-500">*</span>
+                    {messages.order.confirmEmail} <span className="text-orange-500">*</span>
                   </label>
                   <input
                     type="email"
@@ -431,11 +434,11 @@ export default function Order() {
                     onChange={(e) => setConfirmEmail(e.target.value)}
                     onPaste={(e) => e.preventDefault()}
                     className="w-full px-4 py-3 rounded-lg bg-white/10 border border-white/20 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-orange-500"
-                    placeholder="Type your email again"
+                    placeholder={messages.order.confirmPlaceholder}
                   />
                   {confirmEmail &&
                     customerInfo.email.trim().toLowerCase() !== confirmEmail.trim().toLowerCase() && (
-                      <p className="text-red-300 text-sm mt-1">Email addresses do not match.</p>
+                      <p className="text-red-300 text-sm mt-1">{messages.order.emailMismatch}</p>
                     )}
                 </div>
               </div>
@@ -443,7 +446,7 @@ export default function Order() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                 <div>
                   <label htmlFor="phone" className="block text-white mb-2 font-medium">
-                    Phone <span className="text-orange-500">*</span>
+                    {messages.order.phone} <span className="text-orange-500">*</span>
                   </label>
                   <input
                     type="tel"
@@ -452,14 +455,14 @@ export default function Order() {
                     value={customerInfo.phone}
                     onChange={(e) => setCustomerInfo({ ...customerInfo, phone: e.target.value })}
                     className="w-full px-4 py-3 rounded-lg bg-white/10 border border-white/20 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-orange-500"
-                    placeholder="+36 20 123 4567"
+                    placeholder={messages.order.phonePlaceholder}
                   />
                 </div>
               </div>
 
               <div className="mb-6">
                 <label htmlFor="notes" className="block text-white mb-2 font-medium">
-                  Special Instructions (Optional)
+                  {messages.order.notes}
                 </label>
                 <textarea
                   id="notes"
@@ -467,7 +470,7 @@ export default function Order() {
                   onChange={(e) => setCustomerInfo({ ...customerInfo, notes: e.target.value })}
                   rows={3}
                   className="w-full px-4 py-3 rounded-lg bg-white/10 border border-white/20 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-orange-500 resize-none"
-                  placeholder="Protein choice for Tomato Stew, allergies, etc."
+                  placeholder={messages.order.notesPlaceholder}
                 />
               </div>
 
@@ -489,18 +492,18 @@ export default function Order() {
                 disabled={isSubmitting || !orderOpen}
                 className="w-full px-8 py-4 bg-orange-500 text-white rounded-lg font-semibold text-lg hover:bg-orange-600 hover:scale-[1.02] transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
               >
-                {isSubmitting ? 'Sending Order...' : orderOpen ? 'Submit Order' : 'Ordering Closed'}
+                {isSubmitting ? messages.order.sending : orderOpen ? messages.order.submit : messages.order.orderingClosed}
               </button>
 
               <p className="text-white/70 text-center mt-4 text-sm">
-                {siteConfig.pickup.cutoff}
+                {messages.pickup.cutoff}
                 <br />
-                {siteConfig.pickup.summary}
+                {messages.pickup.summary}
               </p>
               <p className="text-white/60 text-center mt-3 text-sm">
-                Your name, email, and phone are used only to prepare this order.{' '}
+                {messages.order.privacyNote}{' '}
                 <Link href="/privacy" className="text-orange-400 hover:text-orange-300 underline underline-offset-2">
-                  Privacy notice
+                  {messages.order.privacyLink}
                 </Link>
               </p>
             </form>
@@ -508,13 +511,13 @@ export default function Order() {
 
           {itemCount === 0 && submitStatus !== 'success' && (
             <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-8 shadow-2xl border border-white/20 mb-8">
-              <h2 className="text-2xl font-bold text-white mb-4 text-center">Order Information</h2>
+              <h2 className="text-2xl font-bold text-white mb-4 text-center">{messages.order.infoTitle}</h2>
               <p className="text-white/90 text-center mb-6 leading-relaxed">
-                Select items from the menu above to place an order.
+                {messages.order.infoBody}
                 <br />
-                {siteConfig.pickup.cutoff}
+                {messages.pickup.cutoff}
                 <br />
-                {siteConfig.pickup.summary}
+                {messages.pickup.summary}
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 {siteConfig.phone ? (
@@ -522,7 +525,7 @@ export default function Order() {
                     href={formatPhoneHref(siteConfig.phone)}
                     className="px-8 py-3 bg-orange-500 text-white rounded-lg font-semibold text-center hover:bg-orange-600 hover:scale-105 transition-all duration-300"
                   >
-                    Call to Order
+                    {messages.order.call}
                   </a>
                 ) : (
                   <a
@@ -531,14 +534,14 @@ export default function Order() {
                     rel="noopener noreferrer"
                     className="px-8 py-3 bg-orange-500 text-white rounded-lg font-semibold text-center hover:bg-orange-600 hover:scale-105 transition-all duration-300"
                   >
-                    Order via Instagram
+                    {messages.order.instagram}
                   </a>
                 )}
                 <Link
                   href="/contact"
                   className="px-8 py-3 bg-white/20 backdrop-blur-sm text-white rounded-lg font-semibold text-center hover:bg-white/30 hover:scale-105 transition-all duration-300 border border-white/30"
                 >
-                  Contact Us
+                  {messages.order.contact}
                 </Link>
               </div>
             </div>
@@ -549,7 +552,7 @@ export default function Order() {
               href="/"
               className="inline-block px-8 py-3 bg-white/20 backdrop-blur-sm text-white rounded-lg font-semibold hover:bg-white/30 hover:scale-105 transition-all duration-300 border border-white/30"
             >
-              ← Back to Home
+              {messages.order.backHome}
             </Link>
           </div>
         </div>
@@ -558,7 +561,11 @@ export default function Order() {
       {itemCount > 0 && (
         <div className="fixed bottom-0 left-0 right-0 z-40 md:hidden bg-black/95 border-t border-white/10 px-4 py-3 flex items-center justify-between gap-4 safe-area-pb">
           <div>
-            <p className="text-white/70 text-xs">{itemCount} item{itemCount !== 1 ? 's' : ''}</p>
+            <p className="text-white/70 text-xs">
+              {fill(itemCount === 1 ? messages.order.itemCount : messages.order.itemCountPlural, {
+                count: itemCount,
+              })}
+            </p>
             <p className="text-white font-bold">{total.toLocaleString()} HUF</p>
           </div>
           <button
@@ -566,7 +573,7 @@ export default function Order() {
             onClick={scrollToSummary}
             className="px-6 py-3 bg-orange-500 text-white rounded-lg font-semibold shrink-0"
           >
-            Review order
+            {messages.order.review}
           </button>
         </div>
       )}

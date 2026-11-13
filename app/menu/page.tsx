@@ -6,6 +6,7 @@ import { useEffect, useState, useRef } from 'react'
 import PageBackground from '../components/PageBackground'
 import PageHeader from '../components/PageHeader'
 import { menuImages } from '@/data/menu'
+import { useI18n } from '../components/LocaleProvider'
 
 export default function Menu() {
   const [isLoaded, setIsLoaded] = useState(false)
@@ -13,6 +14,7 @@ export default function Menu() {
   const menu2Ref = useRef<HTMLDivElement>(null)
   const [isMenu1Visible, setIsMenu1Visible] = useState(false)
   const [isMenu2Visible, setIsMenu2Visible] = useState(false)
+  const { messages } = useI18n()
 
   useEffect(() => {
     setIsLoaded(true)
@@ -43,8 +45,8 @@ export default function Menu() {
       <div className="relative z-10 p-8 md:p-16">
         <div className="max-w-7xl mx-auto">
           <PageHeader
-            title="Menu"
-            subtitle="Discover our culinary offerings"
+            title={messages.menu.title}
+            subtitle={messages.menu.subtitle}
             isLoaded={isLoaded}
           />
 
@@ -65,7 +67,7 @@ export default function Menu() {
                     priority
                   />
                 </div>
-                <p className="text-white/80 text-center mt-4 text-sm">Rice bowls</p>
+                <p className="text-white/80 text-center mt-4 text-sm">{messages.menu.riceBowls}</p>
               </div>
             </div>
 
@@ -84,7 +86,7 @@ export default function Menu() {
                     className="object-contain rounded-xl group-hover:scale-105 transition-transform duration-500"
                   />
                 </div>
-                <p className="text-white/80 text-center mt-4 text-sm">Soups & stews</p>
+                <p className="text-white/80 text-center mt-4 text-sm">{messages.menu.soups}</p>
               </div>
             </div>
           </div>
@@ -94,13 +96,13 @@ export default function Menu() {
               href="/"
               className="inline-block px-8 py-3 bg-white/20 backdrop-blur-sm text-white rounded-lg font-semibold hover:bg-white/30 hover:scale-105 transition-all duration-300 border border-white/30"
             >
-              ← Back to Home
+              {messages.menu.backHome}
             </Link>
             <Link
               href="/order"
               className="inline-block px-8 py-3 bg-orange-500 text-white rounded-lg font-semibold hover:bg-orange-600 hover:scale-105 transition-all duration-300"
             >
-              Order Now →
+              {messages.menu.orderNow}
             </Link>
           </div>
         </div>

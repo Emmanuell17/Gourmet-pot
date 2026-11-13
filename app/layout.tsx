@@ -3,6 +3,9 @@ import { DM_Sans, Playfair_Display } from 'next/font/google'
 import './globals.css'
 import Navbar from './components/Navbar'
 import Footer from './components/Footer'
+import { LocaleProvider } from './components/LocaleProvider'
+import { getMessages } from '@/lib/i18n'
+import { getRequestLocale } from '@/lib/requestLocale'
 import { siteConfig } from '@/lib/site'
 
 const dmSans = DM_Sans({
@@ -19,38 +22,43 @@ const playfair = Playfair_Display({
 // Lives in /public, so it is served from the site root.
 const SHARE_IMAGE_PATH = '/menu-rice-bowl.jpg'
 
-export const metadata: Metadata = {
-  // Resolves relative URLs (like the share image) to absolute ones
-  metadataBase: new URL(siteConfig.url),
-  title: {
-    default: siteConfig.name,
-    template: `%s | ${siteConfig.name}`,
-  },
-  description: siteConfig.description,
-  // Favicons are picked up automatically from app/icon.svg and app/favicon.ico
-  openGraph: {
-    title: siteConfig.name,
-    description: siteConfig.description,
-    url: '/',
-    type: 'website',
-    locale: 'en_GB',
-    siteName: siteConfig.name,
-    images: [{ url: SHARE_IMAGE_PATH, alt: `${siteConfig.name} — Nigerian cuisine in Debrecen` }],
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: siteConfig.name,
-    description: siteConfig.description,
-    images: [SHARE_IMAGE_PATH],
-  },
+export async function generateMetadata(): Promise<Metadata> {
+  const locale = getRequestLocale()
+  const t = getMessages(locale)
+
+  return {
+    // Resolves relative URLs (like the share image) to absolute ones
+    metadataBase: new URL(siteConfig.url),
+    title: {
+      default: siteConfig.name,
+      template: `%s | ${siteConfig.name}`,
+    },
+    description: t.meta.description,
+    // Favicons are picked up automatically from app/icon.svg and app/favicon.ico
+    openGraph: {
+      title: siteConfig.name,
+      description: t.meta.description,
+      url: '/',
+      type: 'website',
+      locale: locale === 'hu' ? 'hu_HU' : 'en_GB',
+      siteName: siteConfig.name,
+      images: [{ url: SHARE_IMAGE_PATH, alt: `${siteConfig.name} — Nigerian cuisine in Debrecen` }],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: siteConfig.name,
+      description: t.meta.description,
+      images: [SHARE_IMAGE_PATH],
+    },
+  }
 }
 
-function RestaurantJsonLd() {
+function RestaurantJsonLd({ description }: { description: string }) {
   const schema = {
     '@context': 'https://schema.org',
     '@type': 'Restaurant',
     name: siteConfig.name,
-    description: siteConfig.description,
+    description,
     url: siteConfig.url,
     image: `${siteConfig.url}${SHARE_IMAGE_PATH}`,
     servesCuisine: 'Nigerian',
@@ -79,13 +87,18 @@ export default function RootLayout({
 }: {
   children: React.ReactNode
 }) {
+  const locale = getRequestLocale()
+  const t = getMessages(locale)
+
   return (
-    <html lang="en" className={`${dmSans.variable} ${playfair.variable}`}>
+    <html lang={locale} className={`${dmSans.variable} ${playfair.variable}`}>
       <body className="font-sans antialiased min-h-screen flex flex-col bg-black">
-        <RestaurantJsonLd />
-        <Navbar />
-        <main className="flex-1">{children}</main>
-        <Footer />
+        <RestaurantJsonLd description={t.meta.description} />
+        <LocaleProvider initialLocale={locale}>
+          <Navbar />
+          <main className="flex-1">{children}</main>
+          <Footer />
+        </LocaleProvider>
       </body>
     </html>
   )

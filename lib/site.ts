@@ -20,7 +20,7 @@ export const siteConfig = {
   },
   payment: {
     methods: ['Revolut', 'Bank transfer', 'Cash'],
-    note: 'Contact us for payment after placing your order.',
+    note: 'After your order is confirmed by email, we send Revolut or bank transfer details in a follow-up message. Cash is accepted at pickup.',
   },
 } as const
 
