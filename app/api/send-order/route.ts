@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import nodemailer from 'nodemailer'
 import { fill, getMessages } from '@/lib/i18n'
 import { parseLocale } from '@/lib/locale'
+import { createOrderCode } from '@/lib/orderCode'
 import { siteConfig } from '@/lib/site'
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -65,6 +66,11 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    const orderCode = createOrderCode()
+    const customerName = typeof customerInfo.name === 'string' ? customerInfo.name : ''
+    const customerPhone = typeof customerInfo.phone === 'string' ? customerInfo.phone : ''
+    const customerNotes = typeof customerInfo.notes === 'string' ? customerInfo.notes : ''
+
     const orderItemsText = orderItems
       .map((item: any) => {
         const price =
@@ -78,15 +84,16 @@ export async function POST(request: NextRequest) {
     const chefMailOptions = {
       from: process.env.SMTP_USER,
       to: process.env.ORDER_EMAIL || process.env.SMTP_USER,
-      subject: `New Order from ${customerInfo.name} - Gourmet Pot`,
+      subject: `Order ${orderCode} from ${customerName} - Gourmet Pot`,
       html: `
         <h2>New Order Received</h2>
+        <p><strong>Order code:</strong> ${orderCode}</p>
         <h3>Customer Information:</h3>
         <ul>
-          <li><strong>Name:</strong> ${escapeHtml(customerInfo.name)}</li>
+          <li><strong>Name:</strong> ${escapeHtml(customerName)}</li>
           <li><strong>Email:</strong> ${escapeHtml(customerEmail)}</li>
-          <li><strong>Phone:</strong> ${escapeHtml(customerInfo.phone)}</li>
-          ${customerInfo.notes ? `<li><strong>Notes:</strong> ${escapeHtml(customerInfo.notes)}</li>` : ''}
+          <li><strong>Phone:</strong> ${escapeHtml(customerPhone)}</li>
+          ${customerNotes ? `<li><strong>Notes:</strong> ${escapeHtml(customerNotes)}</li>` : ''}
         </ul>
         
         <h3>Order Items:</h3>
@@ -100,12 +107,13 @@ export async function POST(request: NextRequest) {
       `,
       text: `
         New Order Received
+        Order code: ${orderCode}
         
         Customer Information:
-        Name: ${customerInfo.name}
+        Name: ${customerName}
         Email: ${customerEmail}
-        Phone: ${customerInfo.phone}
-        ${customerInfo.notes ? `Notes: ${customerInfo.notes}` : ''}
+        Phone: ${customerPhone}
+        ${customerNotes ? `Notes: ${customerNotes}` : ''}
         
         Order Items:
         ${orderItemsText}
@@ -118,15 +126,16 @@ export async function POST(request: NextRequest) {
       `,
     }
 
-    const customerName = typeof customerInfo.name === 'string' ? customerInfo.name : ''
     const customerMailOptions = {
       from: process.env.SMTP_USER,
       to: customerEmail,
-      subject: t.email.customerSubject,
+      subject: fill(t.email.customerSubject, { code: orderCode }),
       html: `
         <h2>${t.email.sent}</h2>
         <p>${fill(t.email.greeting, { name: escapeHtml(customerName) })}</p>
         <p>${t.email.thanks}</p>
+        <p><strong>${t.email.orderCode}:</strong> ${orderCode}</p>
+        <p>${t.email.showCode}</p>
         <p><strong>${t.email.pickup}:</strong> ${t.pickup.summary}</p>
         <p><strong>${t.payment.emailLine}</strong></p>
         <h3>${t.email.yourOrder}:</h3>
@@ -138,6 +147,8 @@ export async function POST(request: NextRequest) {
         ${t.email.sent}
         ${fill(t.email.greeting, { name: customerName })}
         ${t.email.thanks}
+        ${t.email.orderCode}: ${orderCode}
+        ${t.email.showCode}
         ${t.email.pickup}: ${t.pickup.summary}
         ${t.payment.emailLine}
 
@@ -160,7 +171,7 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json(
-      { success: true, message: t.api.sent, confirmationEmailSent },
+      { success: true, message: t.api.sent, confirmationEmailSent, orderCode },
       { status: 200 }
     )
   } catch (error: any) {

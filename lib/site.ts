@@ -1,5 +1,5 @@
 export const siteConfig = {
-  name: 'Gourmet pot',
+  name: 'Gourmet Pot',
   tagline: 'Where culinary artistry meets authentic tradition',
   description:
     'Authentic Nigerian cuisine in Debrecen — weekly preorder with pickup on Wednesdays and Fridays after 3:00 PM. Jollof, soups, and more.',
@@ -15,7 +15,8 @@ export const siteConfig = {
     summary: 'Pickups are every Wednesday and Friday after 3:00 PM.',
     cutoff: 'Orders close every Tuesday and Thursday at 4:00 PM.',
     address: 'Debrecen, Hungary',
-    mapsUrl: '',
+    mapsUrl:
+      'https://www.google.com/maps/search/?api=1&query=Szent+Anna+utca%2C+Debrecen%2C+Hungary',
   },
   payment: {
     methods: ['Revolut', 'Bank transfer', 'Cash'],

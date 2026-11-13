@@ -147,9 +147,21 @@ export default function Home() {
               <br />
               {messages.pickup.summary}
             </p>
-            {siteConfig.pickup.address && (
-              <p className="text-gray-600 text-center mt-4 text-sm">{siteConfig.pickup.address}</p>
-            )}
+            {siteConfig.pickup.address &&
+              (siteConfig.pickup.mapsUrl ? (
+                <p className="text-center mt-4">
+                  <a
+                    href={siteConfig.pickup.mapsUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-gray-600 text-sm underline-offset-2 hover:text-orange-600 hover:underline"
+                  >
+                    {siteConfig.pickup.address}
+                  </a>
+                </p>
+              ) : (
+                <p className="text-gray-600 text-center mt-4 text-sm">{siteConfig.pickup.address}</p>
+              ))}
           </div>
         </section>
       </div>

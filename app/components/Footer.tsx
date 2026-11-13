@@ -21,9 +21,19 @@ export default function Footer() {
           <h2 className="font-semibold text-orange-400 mb-3">{messages.footer.pickup}</h2>
           <p className="text-white/70 text-sm leading-relaxed">{messages.pickup.cutoff}</p>
           <p className="text-white/70 text-sm leading-relaxed mt-2">{messages.pickup.summary}</p>
-          {siteConfig.pickup.address && (
-            <p className="text-white/70 text-sm mt-2">{siteConfig.pickup.address}</p>
-          )}
+          {siteConfig.pickup.address &&
+            (siteConfig.pickup.mapsUrl ? (
+              <a
+                href={siteConfig.pickup.mapsUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-white/70 text-sm mt-2 inline-block hover:text-orange-400 transition-colors"
+              >
+                {siteConfig.pickup.address}
+              </a>
+            ) : (
+              <p className="text-white/70 text-sm mt-2">{siteConfig.pickup.address}</p>
+            ))}
         </div>
 
         <div>
@@ -80,6 +90,9 @@ export default function Footer() {
           </Link>
           <Link href="/contact" className="hover:text-orange-400 transition-colors">
             {messages.nav.contact}
+          </Link>
+          <Link href="/privacy" className="hover:text-orange-400 transition-colors">
+            {messages.nav.privacy}
           </Link>
         </nav>
       </div>

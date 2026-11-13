@@ -9,6 +9,7 @@ const en = {
     menu: 'Menu',
     order: 'Order',
     contact: 'Contact',
+    privacy: 'Privacy',
     open: 'Open menu',
     close: 'Close menu',
     language: 'Language',
@@ -133,6 +134,10 @@ const en = {
     itemCountPlural: '{count} items',
     review: 'Review order',
     placed: 'Order placed',
+    orderCode: 'Order code',
+    showCode: 'Show this code at pickup.',
+    privacyNote: 'Your name, email, and phone are used only to prepare this order.',
+    privacyLink: 'Privacy notice',
     success:
       'Order sent successfully. After this confirmation, we send Revolut or bank transfer details in a follow-up message. Cash is accepted at pickup.',
     successNoEmail:
@@ -145,9 +150,11 @@ const en = {
     failed: 'Failed to send order. Please try again or contact us.',
   },
   email: {
-    customerSubject: 'Order confirmation - Gourmet Pot',
+    customerSubject: 'Order confirmation {code} - Gourmet Pot',
     greeting: 'Hi {name},',
     thanks: 'Thanks for your order. We received it and will review it shortly.',
+    orderCode: 'Order code',
+    showCode: 'Show this code at pickup.',
     pickup: 'Pickup',
     yourOrder: 'Your order',
     total: 'Total',

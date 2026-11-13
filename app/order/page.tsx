@@ -40,6 +40,7 @@ export default function Order() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle')
   const [submitMessage, setSubmitMessage] = useState('')
+  const [orderCode, setOrderCode] = useState('')
   const [orderOpen, setOrderOpen] = useState(true)
   const [hydrated, setHydrated] = useState(false)
   const { locale, messages } = useI18n()
@@ -132,6 +133,7 @@ export default function Order() {
 
     setIsSubmitting(true)
     setSubmitStatus('idle')
+    setOrderCode('')
 
     try {
       const orderItems = getOrderLineItems(quantities)
@@ -151,6 +153,7 @@ export default function Order() {
 
       if (data.success) {
         setSubmitStatus('success')
+        setOrderCode(typeof data.orderCode === 'string' ? data.orderCode : '')
         setSubmitMessage(
           messages.order.success +
             (data.confirmationEmailSent === false ? messages.order.successNoEmail : '')
@@ -213,6 +216,15 @@ export default function Order() {
               <h2 className="font-display text-3xl md:text-4xl font-bold text-white mb-4">
                 {messages.order.placed}
               </h2>
+              {orderCode && (
+                <div className="mb-6">
+                  <p className="text-white/70 text-sm uppercase tracking-wider mb-2">{messages.order.orderCode}</p>
+                  <p className="font-display text-4xl md:text-5xl font-bold text-white tracking-widest">
+                    {orderCode}
+                  </p>
+                  <p className="text-white/80 mt-2">{messages.order.showCode}</p>
+                </div>
+              )}
               <p className="text-white/95 text-lg mb-2">{submitMessage}</p>
               <p className="text-white/70 text-sm">
                 {messages.pickup.cutoff} {messages.pickup.summary}
@@ -487,6 +499,12 @@ export default function Order() {
                 {messages.pickup.cutoff}
                 <br />
                 {messages.pickup.summary}
+              </p>
+              <p className="text-white/60 text-center mt-3 text-sm">
+                {messages.order.privacyNote}{' '}
+                <Link href="/privacy" className="text-orange-400 hover:text-orange-300 underline underline-offset-2">
+                  {messages.order.privacyLink}
+                </Link>
               </p>
             </form>
           )}

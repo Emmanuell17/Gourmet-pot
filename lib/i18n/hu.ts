@@ -11,6 +11,7 @@ const hu: Messages = {
     menu: 'Étlap',
     order: 'Rendelés',
     contact: 'Kapcsolat',
+    privacy: 'Adatvédelem',
     open: 'Menü megnyitása',
     close: 'Menü bezárása',
     language: 'Nyelv',
@@ -135,6 +136,10 @@ const hu: Messages = {
     itemCountPlural: '{count} tétel',
     review: 'Rendelés áttekintése',
     placed: 'Rendelés leadva',
+    orderCode: 'Rendelési kód',
+    showCode: 'Mutasd ezt a kódot az átvételkor.',
+    privacyNote: 'A nevedet, az e-mail-címedet és a telefonszámodat csak a rendelés elkészítéséhez használjuk.',
+    privacyLink: 'Adatvédelmi tájékoztató',
     success:
       'A rendelés elküldve. A visszaigazolás után egy következő üzenetben küldjük a Revolut vagy az átutalás adatait. Készpénzzel az átvételkor is lehet fizetni.',
     successNoEmail:
@@ -147,9 +152,11 @@ const hu: Messages = {
     failed: 'A rendelést nem sikerült elküldeni. Próbáld újra, vagy írj nekünk.',
   },
   email: {
-    customerSubject: 'Rendelés visszaigazolása - Gourmet Pot',
+    customerSubject: 'Rendelés visszaigazolása {code} - Gourmet Pot',
     greeting: 'Szia {name}!',
     thanks: 'Köszönjük a rendelést. Megkaptuk, és hamarosan átnézzük.',
+    orderCode: 'Rendelési kód',
+    showCode: 'Mutasd ezt a kódot az átvételkor.',
     pickup: 'Átvétel',
     yourOrder: 'A rendelésed',
     total: 'Összesen',
