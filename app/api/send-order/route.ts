@@ -1,8 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
 import nodemailer from 'nodemailer'
+import { createOrderCode } from '@/lib/orderCode'
 import { siteConfig } from '@/lib/site'
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+function escapeHtml(value: unknown): string {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -53,6 +62,11 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    const orderCode = createOrderCode()
+    const customerName = typeof customerInfo.name === 'string' ? customerInfo.name : ''
+    const customerPhone = typeof customerInfo.phone === 'string' ? customerInfo.phone : ''
+    const customerNotes = typeof customerInfo.notes === 'string' ? customerInfo.notes : ''
+
     const orderItemsText = orderItems
       .map((item: any) => {
         const price =
@@ -66,19 +80,20 @@ export async function POST(request: NextRequest) {
     const chefMailOptions = {
       from: process.env.SMTP_USER,
       to: process.env.ORDER_EMAIL || process.env.SMTP_USER,
-      subject: `New Order from ${customerInfo.name} - Gourmet Pot`,
+      subject: `Order ${orderCode} from ${customerName} - Gourmet Pot`,
       html: `
         <h2>New Order Received</h2>
+        <p><strong>Order code:</strong> ${orderCode}</p>
         <h3>Customer Information:</h3>
         <ul>
-          <li><strong>Name:</strong> ${customerInfo.name}</li>
-          <li><strong>Email:</strong> ${customerEmail}</li>
-          <li><strong>Phone:</strong> ${customerInfo.phone}</li>
-          ${customerInfo.notes ? `<li><strong>Notes:</strong> ${customerInfo.notes}</li>` : ''}
+          <li><strong>Name:</strong> ${escapeHtml(customerName)}</li>
+          <li><strong>Email:</strong> ${escapeHtml(customerEmail)}</li>
+          <li><strong>Phone:</strong> ${escapeHtml(customerPhone)}</li>
+          ${customerNotes ? `<li><strong>Notes:</strong> ${escapeHtml(customerNotes)}</li>` : ''}
         </ul>
         
         <h3>Order Items:</h3>
-        <pre style="background: #f5f5f5; padding: 15px; border-radius: 5px;">${orderItemsText}</pre>
+        <pre style="background: #f5f5f5; padding: 15px; border-radius: 5px;">${escapeHtml(orderItemsText)}</pre>
         
         <h3>Total: ${total.toLocaleString()} HUF</h3>
         
@@ -87,12 +102,13 @@ export async function POST(request: NextRequest) {
       `,
       text: `
         New Order Received
+        Order code: ${orderCode}
         
         Customer Information:
-        Name: ${customerInfo.name}
+        Name: ${customerName}
         Email: ${customerEmail}
-        Phone: ${customerInfo.phone}
-        ${customerInfo.notes ? `Notes: ${customerInfo.notes}` : ''}
+        Phone: ${customerPhone}
+        ${customerNotes ? `Notes: ${customerNotes}` : ''}
         
         Order Items:
         ${orderItemsText}
@@ -110,22 +126,26 @@ export async function POST(request: NextRequest) {
     const customerMailOptions = {
       from: process.env.SMTP_USER,
       to: customerEmail,
-      subject: `Order confirmation - Gourmet Pot`,
+      subject: `Order confirmation ${orderCode} - Gourmet Pot`,
       html: `
         <h2>Order sent successfully</h2>
-        <p>Hi ${customerInfo.name},</p>
+        <p>Hi ${escapeHtml(customerName)},</p>
         <p>Thanks for your order. We received it and will review it shortly.</p>
+        <p><strong>Order code:</strong> ${orderCode}</p>
+        <p>Show this code at pickup.</p>
         <p><strong>Pickup:</strong> ${siteConfig.pickup.summary}</p>
         <p><strong>${paymentLine}</strong></p>
         <h3>Your order:</h3>
-        <pre style="background: #f5f5f5; padding: 15px; border-radius: 5px;">${orderItemsText}</pre>
+        <pre style="background: #f5f5f5; padding: 15px; border-radius: 5px;">${escapeHtml(orderItemsText)}</pre>
         <h3>Total: ${total.toLocaleString()} HUF</h3>
         <p><strong>Order Date:</strong> ${new Date().toLocaleString()}</p>
       `,
       text: `
         Order sent successfully
-        Hi ${customerInfo.name},
+        Hi ${customerName},
         Thanks for your order. We received it and will review it shortly.
+        Order code: ${orderCode}
+        Show this code at pickup.
         Pickup: ${siteConfig.pickup.summary}
         ${paymentLine}
 
@@ -148,7 +168,7 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json(
-      { success: true, message: 'Order sent successfully!', confirmationEmailSent },
+      { success: true, message: 'Order sent successfully!', confirmationEmailSent, orderCode },
       { status: 200 }
     )
   } catch (error: any) {
