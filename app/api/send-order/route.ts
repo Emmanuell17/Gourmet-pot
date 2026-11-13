@@ -1,25 +1,37 @@
 import { NextRequest, NextResponse } from 'next/server'
 import nodemailer from 'nodemailer'
+import { fill, getMessages } from '@/lib/i18n'
+import { parseLocale } from '@/lib/locale'
 import { siteConfig } from '@/lib/site'
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
+function escapeHtml(value: unknown): string {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+}
+
 export async function POST(request: NextRequest) {
+  let t = getMessages('en')
   try {
     const body = await request.json()
     const { customerInfo, orderItems, total } = body
+    t = getMessages(parseLocale(body.locale))
 
     if (!process.env.SMTP_USER || !process.env.SMTP_PASSWORD) {
       console.error('Missing SMTP credentials in environment variables')
       return NextResponse.json(
-        { success: false, message: 'Email service is not configured. Please contact the restaurant directly.' },
+        { success: false, message: t.api.notConfigured },
         { status: 500 }
       )
     }
 
     if (!customerInfo || !orderItems || orderItems.length === 0) {
       return NextResponse.json(
-        { success: false, message: 'Invalid order data provided.' },
+        { success: false, message: t.api.invalid },
         { status: 400 }
       )
     }
@@ -28,7 +40,7 @@ export async function POST(request: NextRequest) {
       typeof customerInfo.email === 'string' ? customerInfo.email.trim() : ''
     if (!customerEmail || customerEmail.length > 254 || !EMAIL_REGEX.test(customerEmail)) {
       return NextResponse.json(
-        { success: false, message: 'Please enter a valid email address.' },
+        { success: false, message: t.api.badEmail },
         { status: 400 }
       )
     }
@@ -48,7 +60,7 @@ export async function POST(request: NextRequest) {
     } catch (verifyError) {
       console.error('SMTP verification failed:', verifyError)
       return NextResponse.json(
-        { success: false, message: 'Email service configuration error. Please contact the restaurant directly.' },
+        { success: false, message: t.api.configError },
         { status: 500 }
       )
     }
@@ -71,18 +83,19 @@ export async function POST(request: NextRequest) {
         <h2>New Order Received</h2>
         <h3>Customer Information:</h3>
         <ul>
-          <li><strong>Name:</strong> ${customerInfo.name}</li>
-          <li><strong>Email:</strong> ${customerEmail}</li>
-          <li><strong>Phone:</strong> ${customerInfo.phone}</li>
-          ${customerInfo.notes ? `<li><strong>Notes:</strong> ${customerInfo.notes}</li>` : ''}
+          <li><strong>Name:</strong> ${escapeHtml(customerInfo.name)}</li>
+          <li><strong>Email:</strong> ${escapeHtml(customerEmail)}</li>
+          <li><strong>Phone:</strong> ${escapeHtml(customerInfo.phone)}</li>
+          ${customerInfo.notes ? `<li><strong>Notes:</strong> ${escapeHtml(customerInfo.notes)}</li>` : ''}
         </ul>
         
         <h3>Order Items:</h3>
-        <pre style="background: #f5f5f5; padding: 15px; border-radius: 5px;">${orderItemsText}</pre>
+        <pre style="background: #f5f5f5; padding: 15px; border-radius: 5px;">${escapeHtml(orderItemsText)}</pre>
         
         <h3>Total: ${total.toLocaleString()} HUF</h3>
         
         <p><strong>Pickup:</strong> ${siteConfig.pickup.summary}</p>
+        <p><strong>Customer language:</strong> ${body.locale === 'hu' ? 'Hungarian' : 'English'}</p>
         <p><strong>Order Date:</strong> ${new Date().toLocaleString()}</p>
       `,
       text: `
@@ -100,40 +113,39 @@ export async function POST(request: NextRequest) {
         Total: ${total.toLocaleString()} HUF
         
         Pickup: ${siteConfig.pickup.summary}
+        Customer language: ${body.locale === 'hu' ? 'Hungarian' : 'English'}
         Order Date: ${new Date().toLocaleString()}
       `,
     }
 
-    const paymentLine =
-      'Payment: contact us for payment via Revolut, Bank transfer or Cash.'
-
+    const customerName = typeof customerInfo.name === 'string' ? customerInfo.name : ''
     const customerMailOptions = {
       from: process.env.SMTP_USER,
       to: customerEmail,
-      subject: `Order confirmation - Gourmet Pot`,
+      subject: t.email.customerSubject,
       html: `
-        <h2>Order sent successfully</h2>
-        <p>Hi ${customerInfo.name},</p>
-        <p>Thanks for your order. We received it and will review it shortly.</p>
-        <p><strong>Pickup:</strong> ${siteConfig.pickup.summary}</p>
-        <p><strong>${paymentLine}</strong></p>
-        <h3>Your order:</h3>
-        <pre style="background: #f5f5f5; padding: 15px; border-radius: 5px;">${orderItemsText}</pre>
-        <h3>Total: ${total.toLocaleString()} HUF</h3>
-        <p><strong>Order Date:</strong> ${new Date().toLocaleString()}</p>
+        <h2>${t.email.sent}</h2>
+        <p>${fill(t.email.greeting, { name: escapeHtml(customerName) })}</p>
+        <p>${t.email.thanks}</p>
+        <p><strong>${t.email.pickup}:</strong> ${t.pickup.summary}</p>
+        <p><strong>${t.payment.emailLine}</strong></p>
+        <h3>${t.email.yourOrder}:</h3>
+        <pre style="background: #f5f5f5; padding: 15px; border-radius: 5px;">${escapeHtml(orderItemsText)}</pre>
+        <h3>${t.email.total}: ${total.toLocaleString()} HUF</h3>
+        <p><strong>${t.email.orderDate}:</strong> ${new Date().toLocaleString(body.locale === 'hu' ? 'hu-HU' : 'en-GB')}</p>
       `,
       text: `
-        Order sent successfully
-        Hi ${customerInfo.name},
-        Thanks for your order. We received it and will review it shortly.
-        Pickup: ${siteConfig.pickup.summary}
-        ${paymentLine}
+        ${t.email.sent}
+        ${fill(t.email.greeting, { name: customerName })}
+        ${t.email.thanks}
+        ${t.email.pickup}: ${t.pickup.summary}
+        ${t.payment.emailLine}
 
-        Your order:
+        ${t.email.yourOrder}:
         ${orderItemsText}
 
-        Total: ${total.toLocaleString()} HUF
-        Order Date: ${new Date().toLocaleString()}
+        ${t.email.total}: ${total.toLocaleString()} HUF
+        ${t.email.orderDate}: ${new Date().toLocaleString(body.locale === 'hu' ? 'hu-HU' : 'en-GB')}
       `,
     }
 
@@ -148,17 +160,17 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json(
-      { success: true, message: 'Order sent successfully!', confirmationEmailSent },
+      { success: true, message: t.api.sent, confirmationEmailSent },
       { status: 200 }
     )
   } catch (error: any) {
     console.error('Error sending email:', error)
     
-    let errorMessage = 'Failed to send order. Please try again or call us.'
+    let errorMessage = t.api.failed
     if (error.code === 'EAUTH') {
-      errorMessage = 'Email authentication failed. Please contact the restaurant directly.'
+      errorMessage = t.api.auth
     } else if (error.code === 'ECONNECTION') {
-      errorMessage = 'Could not connect to email server. Please try again later.'
+      errorMessage = t.api.connection
     }
     
     return NextResponse.json(

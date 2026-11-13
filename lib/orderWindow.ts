@@ -1,7 +1,17 @@
 import { siteConfig } from './site'
 
+export type OrderWindowKind =
+  | 'friday'
+  | 'weekend'
+  | 'tuesdayClosed'
+  | 'tuesdayOpen'
+  | 'thursdayClosed'
+  | 'thursdayOpen'
+  | 'open'
+
 export type OrderWindowStatus = {
   isOpen: boolean
+  kind: OrderWindowKind
   title: string
   message: string
 }
@@ -51,6 +61,7 @@ export function getOrderWindowStatus(): OrderWindowStatus {
   if (day === 5) {
     return {
       isOpen: false,
+      kind: 'friday',
       title: 'Pickup day',
       message: `It's Friday — ${siteConfig.pickup.summary} New orders open again on Sunday.`,
     }
@@ -59,6 +70,7 @@ export function getOrderWindowStatus(): OrderWindowStatus {
   if (day === 6) {
     return {
       isOpen: false,
+      kind: 'weekend',
       title: 'Ordering closed',
       message: 'We are closed for orders this weekend. Ordering reopens Sunday.',
     }
@@ -67,6 +79,7 @@ export function getOrderWindowStatus(): OrderWindowStatus {
   if (day === 2 && afterCutoff) {
     return {
       isOpen: false,
+      kind: 'tuesdayClosed',
       title: 'Ordering closed',
       message: `${siteConfig.pickup.cutoff} Ordering reopens Wednesday for Friday pickup.`,
     }
@@ -75,6 +88,7 @@ export function getOrderWindowStatus(): OrderWindowStatus {
   if (day === 2) {
     return {
       isOpen: true,
+      kind: 'tuesdayOpen',
       title: 'Last day to order for Wednesday pickup',
       message: `Order before 4:00 PM today (Budapest time). ${siteConfig.pickup.summary}`,
     }
@@ -83,6 +97,7 @@ export function getOrderWindowStatus(): OrderWindowStatus {
   if (day === 4 && afterCutoff) {
     return {
       isOpen: false,
+      kind: 'thursdayClosed',
       title: 'Ordering closed',
       message: `${siteConfig.pickup.cutoff} ${siteConfig.pickup.summary} New orders open again on Sunday.`,
     }
@@ -91,6 +106,7 @@ export function getOrderWindowStatus(): OrderWindowStatus {
   if (day === 4) {
     return {
       isOpen: true,
+      kind: 'thursdayOpen',
       title: 'Last day to order for Friday pickup',
       message: `Order before 4:00 PM today (Budapest time). ${siteConfig.pickup.summary}`,
     }
@@ -98,6 +114,7 @@ export function getOrderWindowStatus(): OrderWindowStatus {
 
   return {
     isOpen: true,
+    kind: 'open',
     title: 'Now taking orders',
     message: `${siteConfig.pickup.cutoff} ${siteConfig.pickup.summary}`,
   }

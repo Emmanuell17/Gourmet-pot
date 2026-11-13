@@ -4,16 +4,19 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { siteConfig } from '@/lib/site'
+import LanguageToggle from './LanguageToggle'
+import { useI18n } from './LocaleProvider'
 
 export default function Navbar() {
   const pathname = usePathname()
   const [mobileOpen, setMobileOpen] = useState(false)
+  const { messages } = useI18n()
 
   const navItems = [
-    { name: 'Home', href: '/' },
-    { name: 'Menu', href: '/menu' },
-    { name: 'Order', href: '/order' },
-    { name: 'Contact', href: '/contact' },
+    { name: messages.nav.home, href: '/' },
+    { name: messages.nav.menu, href: '/menu' },
+    { name: messages.nav.order, href: '/order' },
+    { name: messages.nav.contact, href: '/contact' },
   ]
 
   useEffect(() => {
@@ -37,6 +40,7 @@ export default function Navbar() {
 
           {/* Desktop nav */}
           <div className="hidden md:flex items-center gap-6">
+            <LanguageToggle />
             {navItems.map((item) => {
               const isActive = pathname === item.href
               return (
@@ -59,10 +63,10 @@ export default function Navbar() {
             className="md:hidden p-2 rounded-lg hover:bg-white/10 transition-colors"
             aria-expanded={mobileOpen}
             aria-controls="mobile-nav"
-            aria-label={mobileOpen ? 'Close menu' : 'Open menu'}
+            aria-label={mobileOpen ? messages.nav.close : messages.nav.open}
             onClick={() => setMobileOpen((open) => !open)}
           >
-            <span className="sr-only">{mobileOpen ? 'Close' : 'Menu'}</span>
+            <span className="sr-only">{mobileOpen ? messages.nav.close : messages.nav.open}</span>
             <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden>
               {mobileOpen ? (
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -80,6 +84,9 @@ export default function Navbar() {
           id="mobile-nav"
           className="md:hidden border-t border-white/10 py-4 space-y-1"
         >
+          <div className="px-2 pb-3">
+            <LanguageToggle />
+          </div>
           {navItems.map((item) => {
             const isActive = pathname === item.href
             return (

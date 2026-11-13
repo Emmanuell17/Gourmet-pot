@@ -2,9 +2,11 @@
 
 import { useEffect, useState } from 'react'
 import { getOrderWindowStatus, type OrderWindowStatus } from '@/lib/orderWindow'
+import { useI18n } from './LocaleProvider'
 
 export default function OrderBanner() {
   const [status, setStatus] = useState<OrderWindowStatus | null>(null)
+  const { messages } = useI18n()
 
   useEffect(() => {
     setStatus(getOrderWindowStatus())
@@ -21,8 +23,8 @@ export default function OrderBanner() {
       }`}
       role="status"
     >
-      <p className="font-semibold">{status.title}</p>
-      <p className="mt-1 text-white/85">{status.message}</p>
+      <p className="font-semibold">{messages.banner[status.kind].title}</p>
+      <p className="mt-1 text-white/85">{messages.banner[status.kind].message}</p>
     </div>
   )
 }

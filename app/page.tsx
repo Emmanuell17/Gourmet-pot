@@ -7,6 +7,7 @@ import PageBackground from './components/PageBackground'
 import OrderBanner from './components/OrderBanner'
 import { siteConfig } from '@/lib/site'
 import { menuItems } from '@/data/menu'
+import { useI18n } from './components/LocaleProvider'
 
 const featuredIds = [1, 3, 6]
 
@@ -18,6 +19,7 @@ export default function Home() {
   const favoritesRef = useRef<HTMLDivElement>(null)
 
   const featured = menuItems.filter((item) => featuredIds.includes(item.id))
+  const { messages } = useI18n()
 
   useEffect(() => {
     setIsLoaded(true)
@@ -65,7 +67,7 @@ export default function Home() {
             }`}
             style={{ textShadow: '1px 1px 4px rgba(0,0,0,0.5)' }}
           >
-            {siteConfig.tagline}
+            {messages.meta.tagline}
           </p>
 
           <div
@@ -85,7 +87,7 @@ export default function Home() {
               href="/menu"
               className="group relative px-10 py-4 bg-orange-500 text-white rounded-lg font-semibold text-lg overflow-hidden transition-all duration-300 hover:scale-110 hover:shadow-2xl hover:shadow-orange-500/50"
             >
-              <span className="relative z-10">View Menu</span>
+              <span className="relative z-10">{messages.home.viewMenu}</span>
               <div className="absolute inset-0 bg-orange-600 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left" />
             </Link>
 
@@ -93,7 +95,7 @@ export default function Home() {
               href="/order"
               className="group px-10 py-4 bg-transparent border-2 border-white text-white rounded-lg font-semibold text-lg transition-all duration-300 hover:scale-110 hover:bg-white hover:text-black hover:shadow-2xl"
             >
-              Order Now
+              {messages.home.orderNow}
             </Link>
           </div>
         </div>
@@ -107,7 +109,7 @@ export default function Home() {
           }`}
         >
           <h2 className="font-display text-3xl font-semibold text-white text-center mb-8">
-            Customer favorites
+            {messages.home.favorites}
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             {featured.map((item) => (
@@ -125,7 +127,7 @@ export default function Home() {
               href="/menu"
               className="text-orange-400 font-medium hover:text-orange-300 transition-colors"
             >
-              View full menu →
+              {messages.home.viewFullMenu}
             </Link>
           </p>
         </section>
@@ -138,12 +140,12 @@ export default function Home() {
         >
           <div className="bg-white/90 backdrop-blur-sm rounded-2xl p-8 md:p-12 shadow-lg border border-white/50 max-w-md mx-auto">
             <h2 className="font-display text-4xl md:text-5xl font-semibold mb-6 text-gray-800 text-center">
-              Pickup
+              {messages.home.pickup}
             </h2>
             <p className="text-lg md:text-xl text-gray-700 text-center leading-relaxed">
-              {siteConfig.pickup.cutoff}
+              {messages.pickup.cutoff}
               <br />
-              {siteConfig.pickup.summary}
+              {messages.pickup.summary}
             </p>
             {siteConfig.pickup.address && (
               <p className="text-gray-600 text-center mt-4 text-sm">{siteConfig.pickup.address}</p>

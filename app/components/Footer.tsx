@@ -1,28 +1,33 @@
+'use client'
+
 import Link from 'next/link'
 import { siteConfig, formatPhoneHref } from '@/lib/site'
+import { fill } from '@/lib/i18n'
+import { useI18n } from './LocaleProvider'
 
 export default function Footer() {
   const year = new Date().getFullYear()
+  const { messages } = useI18n()
 
   return (
     <footer className="relative z-20 border-t border-white/10 bg-black/90 text-white">
       <div className="max-w-7xl mx-auto px-6 py-12 grid grid-cols-1 md:grid-cols-3 gap-10">
         <div>
           <p className="font-display text-2xl font-bold mb-3">{siteConfig.name}</p>
-          <p className="text-white/70 text-sm leading-relaxed">{siteConfig.tagline}</p>
+          <p className="text-white/70 text-sm leading-relaxed">{messages.meta.tagline}</p>
         </div>
 
         <div>
-          <h2 className="font-semibold text-orange-400 mb-3">Pickup</h2>
-          <p className="text-white/70 text-sm leading-relaxed">{siteConfig.pickup.cutoff}</p>
-          <p className="text-white/70 text-sm leading-relaxed mt-2">{siteConfig.pickup.summary}</p>
+          <h2 className="font-semibold text-orange-400 mb-3">{messages.footer.pickup}</h2>
+          <p className="text-white/70 text-sm leading-relaxed">{messages.pickup.cutoff}</p>
+          <p className="text-white/70 text-sm leading-relaxed mt-2">{messages.pickup.summary}</p>
           {siteConfig.pickup.address && (
             <p className="text-white/70 text-sm mt-2">{siteConfig.pickup.address}</p>
           )}
         </div>
 
         <div>
-          <h2 className="font-semibold text-orange-400 mb-3">Connect</h2>
+          <h2 className="font-semibold text-orange-400 mb-3">{messages.footer.connect}</h2>
           <ul className="space-y-2 text-sm">
             <li>
               <a
@@ -56,7 +61,7 @@ export default function Footer() {
             ) : null}
           </ul>
           <p className="text-white/50 text-xs mt-4">
-            Pay via {siteConfig.payment.methods.join(', ')}.
+            {fill(messages.footer.payVia, { methods: messages.payment.methods })}
           </p>
         </div>
       </div>
@@ -65,16 +70,16 @@ export default function Footer() {
         <p>© {year} {siteConfig.name}</p>
         <nav className="flex flex-wrap justify-center gap-4">
           <Link href="/" className="hover:text-orange-400 transition-colors">
-            Home
+            {messages.nav.home}
           </Link>
           <Link href="/menu" className="hover:text-orange-400 transition-colors">
-            Menu
+            {messages.nav.menu}
           </Link>
           <Link href="/order" className="hover:text-orange-400 transition-colors">
-            Order
+            {messages.nav.order}
           </Link>
           <Link href="/contact" className="hover:text-orange-400 transition-colors">
-            Contact
+            {messages.nav.contact}
           </Link>
         </nav>
       </div>
